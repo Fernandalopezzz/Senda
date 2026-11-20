@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <meta name="description" content="SENDA compara el precio de un mismo producto en los comercios de Río Gallegos.">
+  <title>SENDA · Compará precios en los comercios de tu zona</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
+  <script src="js/ui/tema-inicial.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script type="module" src="js/pages/index.page.js"></script>
+</head>
+<body class="pagina-inicio">
+
+  <header class="encabezado encabezado--hero" id="encabezado">
+    <div class="contenedor encabezado__barra" id="barra-publica">
+      <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+      <nav class="navegacion" aria-label="Navegación principal">
+        <a class="navegacion__enlace navegacion__enlace--activo" data-nav="inicio" href="index.html" aria-current="page">Inicio</a>
+        <a class="navegacion__enlace" data-nav="destacados" href="index.html#destacados">Precios Destacados</a>
+        <a class="navegacion__enlace" data-nav="ofertas" href="index.html#ofertas">Ofertas</a>
+      </nav>
+      <div class="encabezado__acciones" data-acciones-visitante>
+        <a class="btn btn--contorno btn--chico" href="login.html">Iniciar sesión</a>
+        <a class="btn btn--blanco btn--chico" href="crear-cuenta.html">Registrarse</a>
+      </div>
+      <div class="encabezado__acciones" data-acciones-sesion hidden>
+        <a class="cuenta-sesion" data-enlace-panel href="gestion-comercio.html" title="Ver mi cuenta">
+          <img class="cuenta-sesion__foto" data-foto-sesion alt="" hidden>
+          <span class="avatar avatar--blanco cuenta-sesion__iniciales" data-iniciales-sesion aria-hidden="true"></span>
+          <span class="cuenta-sesion__nombre" data-nombre-sesion>Mi cuenta</span>
+        </a>
+      </div>
+    </div>
+
+    <section class="hero contenedor" id="buscar" aria-labelledby="titulo-hero">
+      <h1 class="hero__titulo" id="titulo-hero">¿Qué producto estás buscando?</h1>
+      <p class="hero__bajada">El mismo producto, diferentes precios. Compará entre los comercios de tu zona y elegí la mejor opción.</p>
+
+      <form class="buscador" id="form-busqueda" role="search" novalidate>
+        <label class="solo-lectores" for="input-busqueda">Buscar producto, marca o comercio</label>
+        <svg class="icono buscador__icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input class="buscador__input" id="input-busqueda" name="q" type="search" placeholder="Buscar producto, marca o comercio" autocomplete="off" maxlength="80">
+        <button class="buscador__limpiar" type="button" id="boton-limpiar" aria-label="Borrar búsqueda" hidden>
+          <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <button class="btn btn--amarillo" type="submit">Buscar</button>
+      </form>
+      <p class="buscador__error" id="error-busqueda" role="alert" hidden></p>
+    </section>
+
+    <svg class="ondas" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#3d8fd6" d="M0 52c160-30 330-38 520-12s380 30 560 6 270-34 360-20v64H0z"/>
+      <path fill="#2f7fc6" d="M0 70c220-26 470-26 720-6s500 20 720-4v30H0z"/>
+      <path style="fill: var(--fondo)" d="M0 82c240-14 480-14 720-2s480 10 720-2v12H0z"/>
+    </svg>
+  </header>
+
+  <main class="contenedor">
+
+    <div id="vista-inicio">
+      <!-- Solo con cuenta personal y avisos encendidos: cambios de precio en los favoritos -->
+      <section class="novedades-favoritos tarjeta" id="novedades-favoritos" aria-labelledby="titulo-novedades" hidden>
+        <div class="novedades-favoritos__cabecera">
+          <h2 class="novedades-favoritos__titulo" id="titulo-novedades">
+            <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/></svg>
+            Novedades de tus favoritos
+          </h2>
+          <a class="enlace-boton" href="perfil-usuario.html#favoritos">Ver mis favoritos</a>
+        </div>
+        <ul class="novedades-favoritos__lista" id="lista-novedades"></ul>
+      </section>
+
+      <section class="seccion" id="recomendados" aria-labelledby="titulo-recomendados">
+        <div class="seccion__cabecera">
+          <div>
+            <h2 class="seccion__titulo" id="titulo-recomendados">Recomendados</h2>
+            <p class="seccion__bajada">Los productos con el precio más bajo entre los comercios que tienen stock.</p>
+          </div>
+        </div>
+        <div class="grilla-ofertas" id="lista-recomendados"></div>
+      </section>
+
+      <section class="seccion" id="para-vos" aria-labelledby="titulo-para-vos">
+        <div class="seccion__cabecera">
+          <div>
+            <h2 class="seccion__titulo" id="titulo-para-vos">Para vos</h2>
+            <p class="seccion__bajada">La mejor oferta de lo que buscaste y miraste hace poco.</p>
+          </div>
+          <div class="menu-puntos">
+            <button class="boton-icono" type="button" id="boton-menu-para-vos" aria-haspopup="true" aria-expanded="false" aria-label="Opciones de Para vos" title="Opciones">
+              <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+            </button>
+            <div class="menu-puntos__lista" id="menu-para-vos" hidden>
+              <button type="button" id="boton-borrar-historial">Borrar mi historial de búsqueda</button>
+            </div>
+          </div>
+        </div>
+        <div class="grilla-ofertas" id="lista-para-vos"></div>
+      </section>
+
+      <section class="seccion" id="destacados" aria-labelledby="titulo-destacados">
+        <div class="seccion__cabecera">
+          <div>
+            <h2 class="seccion__titulo" id="titulo-destacados">Compará precios</h2>
+            <p class="seccion__bajada">Un ejemplo: el mismo producto en distintos comercios. Elegí el que más te convenga.</p>
+          </div>
+        </div>
+        <div id="contenido-destacados"></div>
+      </section>
+
+      <section class="seccion" id="ofertas" aria-labelledby="titulo-ofertas">
+        <div class="seccion__cabecera">
+          <h2 class="seccion__titulo" id="titulo-ofertas">Ofertas y descuentos</h2>
+          <a class="enlace-seccion" href="resultados.html?vista=ofertas">Ver todas las ofertas</a>
+        </div>
+        <div class="grilla-ofertas" id="lista-ofertas"></div>
+      </section>
+
+      <section class="seccion" id="como-funciona" aria-labelledby="titulo-como-funciona">
+        <div class="seccion__cabecera">
+          <h2 class="seccion__titulo" id="titulo-como-funciona">¿Cómo funciona SENDA?</h2>
+        </div>
+        <ol class="pasos">
+          <li class="paso tarjeta">
+            <span class="paso__numero">1</span>
+            <h3 class="paso__titulo">Buscá</h3>
+            <p class="paso__texto">Escribí el nombre del producto, de la marca o del comercio.</p>
+          </li>
+          <li class="paso tarjeta">
+            <span class="paso__numero">2</span>
+            <h3 class="paso__titulo">Compará</h3>
+            <p class="paso__texto">Mirá el precio y la disponibilidad del mismo producto en cada comercio.</p>
+          </li>
+          <li class="paso tarjeta">
+            <span class="paso__numero">3</span>
+            <h3 class="paso__titulo">Elegí</h3>
+            <p class="paso__texto">Entrá al perfil del comercio para ver su dirección, horario, contacto y productos.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="seccion llamado-comercio" aria-labelledby="titulo-llamado">
+        <div>
+          <h2 class="llamado-comercio__titulo" id="titulo-llamado">¿Tenés un comercio?</h2>
+          <p class="llamado-comercio__texto">Publicá tu catálogo en SENDA, mantené tus precios y tu stock al día y llegá a más clientes de tu zona.</p>
+        </div>
+        <a class="btn btn--amarillo" href="registro-comercio.html">Registrar mi comercio</a>
+      </section>
+    </div>
+
+  </main>
+
+  <footer class="pie" id="pie">
+    <div class="contenedor">
+      <div class="pie__grilla">
+        <div class="pie__marca">
+          <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+          <p class="pie__descripcion">Compará el precio de un mismo producto en los comercios de tu zona y elegí dónde comprar.</p>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Explorar</h2>
+          <ul class="pie__lista">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="index.html#destacados">Precios destacados</a></li>
+            <li><a href="resultados.html?vista=ofertas">Ofertas y descuentos</a></li>
+            <li><a href="resultados.html?vista=comercios">Comercios</a></li>
+            <li><a href="resultados.html?vista=favoritos">Favoritos</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Para comercios</h2>
+          <ul class="pie__lista">
+            <li><a href="registro-comercio.html">Registrar mi comercio</a></li>
+            <li><a href="login.html">Iniciar sesión</a></li>
+            <li><a href="login.html">Cargar productos</a></li>
+            <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Soporte</h2>
+          <ul class="pie__lista">
+            <li><a href="ayuda.html#ayuda">Centro de ayuda</a></li>
+            <li><a href="ayuda.html#terminos">Términos y condiciones</a></li>
+            <li><a href="ayuda.html#privacidad">Política de privacidad</a></li>
+            <li><a href="ayuda.html#consumidor">Defensa del consumidor</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Contacto</h2>
+          <ul class="pie__lista pie__contacto">
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Río Gallegos, Santa Cruz</li>
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><a href="ayuda.html#contacto">Escribinos desde Ayuda</a></li>
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Proyecto escolar · 6.° I Informática</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie__inferior">
+        <p>© 2026 SENDA. Todos los derechos reservados.</p>
+        <p>Los precios los publica cada comercio y pueden cambiar sin aviso.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

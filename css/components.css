@@ -1,0 +1,599 @@
+/* =========================================================
+   SENDA · Componentes reutilizables
+   Botones, formularios, tarjetas, precios, estados,
+   avisos, modales, avatar e interruptor de stock.
+   ========================================================= */
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn--chico {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 0.85rem;
+}
+
+.btn--bloque {
+  width: 100%;
+}
+
+.btn--primario {
+  background: var(--azul);
+  color: var(--blanco);
+}
+
+.btn--primario:hover:not(:disabled) {
+  background: var(--azul-oscuro);
+}
+
+.btn--oscuro {
+  background: var(--marino);
+  color: var(--blanco);
+}
+
+.btn--oscuro:hover:not(:disabled) {
+  background: var(--marino-claro);
+}
+
+.btn--amarillo {
+  background: var(--amarillo);
+  color: var(--marino);
+}
+
+.btn--amarillo:hover:not(:disabled) {
+  background: var(--amarillo-oscuro);
+}
+
+/* Botón blanco sobre el azul del encabezado: queda blanco también en modo oscuro */
+.btn--blanco {
+  background: var(--blanco);
+  color: #1d6fb3;
+}
+
+.btn--contorno {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  color: var(--blanco);
+}
+
+.btn--contorno:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.btn--suave {
+  background: var(--azul-suave);
+  color: var(--azul-oscuro);
+}
+
+.btn--suave:hover:not(:disabled) {
+  background: #d3e5f8;
+}
+
+.btn--linea {
+  border-color: var(--borde);
+  background: var(--superficie);
+  color: var(--azul-oscuro);
+}
+
+.btn--linea:hover:not(:disabled) {
+  border-color: var(--azul);
+}
+
+.btn--peligro {
+  background: var(--rojo);
+  color: var(--blanco);
+}
+
+.btn--exito {
+  background: var(--verde-claro);
+  color: var(--blanco);
+}
+
+.enlace-boton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.enlace-seccion {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+}
+
+/* ---------- Formularios ---------- */
+.campo {
+  display: grid;
+  gap: 6px;
+}
+
+.campo__etiqueta {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.campo__control {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: var(--campo);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.campo__control::placeholder {
+  color: #8996aa;
+}
+
+.campo__control:focus {
+  outline: none;
+  border-color: var(--azul);
+  background: var(--superficie);
+}
+
+textarea.campo__control {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.campo__ayuda {
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+}
+
+.campo__error {
+  min-height: 0;
+  font-size: 0.8rem;
+  color: var(--rojo);
+}
+
+.campo__error:empty {
+  display: none;
+}
+
+.campo--error .campo__control {
+  border-color: var(--rojo);
+  background: #fff8f8;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.opcion input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--azul);
+}
+
+.mensaje {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: var(--radio-chico);
+  font-size: 0.88rem;
+}
+
+.mensaje--error {
+  border-color: #f2c2c2;
+  background: var(--rojo-suave);
+  color: #a12f2f;
+}
+
+.mensaje--exito {
+  border-color: #bfe3cb;
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+.mensaje--info {
+  border-color: #c7dcf3;
+  background: var(--azul-fondo);
+  color: var(--azul-oscuro);
+}
+
+/* ---------- Tarjetas ---------- */
+.tarjeta {
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+/* ---------- Encabezado de sección ---------- */
+.seccion {
+  margin-top: 56px;
+}
+
+.seccion__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.seccion__titulo {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.seccion__bajada {
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- Precios y etiquetas ---------- */
+.precio {
+  font-family: var(--fuente-titulos);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--verde);
+}
+
+.precio__centavos {
+  font-size: 0.65em;
+}
+
+.precio-anterior {
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  text-decoration: line-through;
+}
+
+.pildora-precio {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--amarillo);
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+  color: var(--marino);
+}
+
+.etiqueta-descuento {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--rojo-suave);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--rojo);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.chip--pendiente {
+  background: #fff4d6;
+  color: #8a6400;
+}
+
+.chip--aprobado {
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+.chip--rechazado {
+  background: var(--rojo-suave);
+  color: #a12f2f;
+}
+
+/* ---------- Imagen de producto ---------- */
+/* Sin imagen se dibuja el paisaje de los wireframes (cielo, nube y lomas). */
+.imagen-producto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radio-chico);
+  background:
+    radial-gradient(circle at 74% 28%, #fff 0 7%, transparent 7.5%),
+    radial-gradient(circle at 82% 30%, #fff 0 9%, transparent 9.5%),
+    radial-gradient(circle at 90% 32%, #fff 0 6%, transparent 6.5%),
+    radial-gradient(ellipse 85% 45% at 30% 100%, #8fae1b 0 98%, transparent 100%),
+    radial-gradient(ellipse 90% 55% at 75% 100%, #c6de8c 0 98%, transparent 100%),
+    #d8ecfb;
+}
+
+.imagen-producto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--superficie);
+}
+
+/* ---------- Avatar con iniciales ---------- */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--azul-suave);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+/* Foto del comercio en lugar de las iniciales */
+.avatar--foto {
+  object-fit: cover;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+}
+
+.avatar--blanco {
+  background: var(--blanco);
+  color: #1d6fb3;
+}
+
+/* ---------- Estados: carga, vacío y error ---------- */
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.estado__titulo {
+  font-family: var(--fuente-titulos);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.estado__texto {
+  max-width: 420px;
+  font-size: 0.9rem;
+}
+
+.estado--error .estado__titulo {
+  color: #a12f2f;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--azul-suave);
+  border-top-color: var(--azul);
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pantalla de carga mientras el guard comprueba la sesión */
+.carga-pagina {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: var(--fondo);
+}
+
+/* ---------- Avisos flotantes ---------- */
+.avisos {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 100;
+  display: grid;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 40px));
+}
+
+.aviso {
+  padding: 12px 16px;
+  border-radius: var(--radio-chico);
+  box-shadow: var(--sombra-fuerte);
+  font-size: 0.9rem;
+  color: var(--blanco);
+  animation: aparecer 0.2s ease-out;
+}
+
+.aviso--exito {
+  background: var(--verde);
+}
+
+.aviso--error {
+  background: var(--rojo);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ---------- Modales ---------- */
+.modal {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-fuerte);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.modal--chico {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.modal::backdrop {
+  background: rgba(19, 40, 75, 0.45);
+}
+
+.modal__contenido {
+  display: grid;
+  gap: 16px;
+  padding: 26px;
+}
+
+.modal__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.modal__titulo {
+  font-size: 1.3rem;
+}
+
+.modal__texto {
+  color: var(--texto-suave);
+}
+
+.modal__cerrar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fondo);
+  cursor: pointer;
+}
+
+.modal__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.grilla-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.grilla-campos .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+/* ---------- Interruptor Sí / No de stock ---------- */
+.interruptor {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef1f6;
+}
+
+.interruptor__opcion {
+  min-width: 46px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.interruptor__opcion[aria-pressed="true"].interruptor__opcion--si {
+  background: var(--verde-claro);
+  color: var(--blanco);
+}
+
+.interruptor__opcion[aria-pressed="true"].interruptor__opcion--no {
+  background: var(--rojo);
+  color: var(--blanco);
+}
+
+.interruptor__opcion:disabled {
+  cursor: wait;
+}
+
+/* ---------- Cuenta con sesión iniciada (barra pública) ---------- */
+/* Reemplaza a "Iniciar sesión / Registrarse": foto y nombre del comercio, con enlace a su cuenta. */
+.cuenta-sesion {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 260px;
+  padding: 4px 14px 4px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  color: var(--blanco);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.cuenta-sesion:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.cuenta-sesion__foto {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 2px solid var(--blanco);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cuenta-sesion__nombre {
+  overflow: hidden;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

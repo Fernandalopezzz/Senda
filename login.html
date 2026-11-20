@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <title>Iniciar sesión · SENDA</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
+  <script src="js/ui/tema-inicial.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script type="module" src="js/pages/login.page.js"></script>
+</head>
+<body class="pagina-acceso">
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+      <a class="encabezado__volver" id="enlace-volver" href="index.html">
+        <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        <span id="texto-volver">Volver al inicio</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="acceso">
+    <!-- Vista: iniciar sesión (wireframe pág. 7) -->
+    <section class="acceso__tarjeta" id="vista-login" aria-labelledby="titulo-login">
+      <p class="logo acceso__logo"><img class="logo__imagen" src="assets/img/logo-senda.png" alt="SENDA" width="170" height="40"></p>
+      <h1 class="acceso__titulo" id="titulo-login">Iniciá sesión</h1>
+      <p class="acceso__bajada">Ingresá a tu cuenta personal o al panel de tu comercio</p>
+
+      <p id="mensaje-login" hidden></p>
+
+      <form class="acceso__formulario" id="form-login" novalidate>
+        <div class="campo">
+          <label class="campo__etiqueta" for="login-email">Correo electrónico</label>
+          <input class="campo__control" id="login-email" type="email" autocomplete="email" placeholder="nombre@correo.com" required>
+          <p class="campo__error" id="login-email-error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="login-password">Contraseña</label>
+          <input class="campo__control" id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+          <p class="campo__error" id="login-password-error"></p>
+        </div>
+        <a class="acceso__olvido" href="#recuperar">¿Olvidaste tu contraseña?</a>
+        <button class="btn btn--primario btn--bloque" type="submit" id="boton-login">Iniciar sesión</button>
+      </form>
+
+      <p class="acceso__alternativa">¿No tenés una cuenta? <a href="crear-cuenta.html">Registrate</a></p>
+      <div class="separador"><span>o</span></div>
+      <button class="btn btn--linea btn--bloque boton-google" type="button" id="boton-google">
+        <span class="boton-google__logo" aria-hidden="true">G</span>
+        Continuar con Google
+      </button>
+    </section>
+
+    <!-- Vista: recuperar contraseña (wireframe pág. 9) -->
+    <section class="acceso__tarjeta" id="vista-recuperar" aria-labelledby="titulo-recuperar" hidden>
+      <p class="logo acceso__logo"><img class="logo__imagen" src="assets/img/logo-senda.png" alt="SENDA" width="170" height="40"></p>
+      <h1 class="acceso__titulo" id="titulo-recuperar">¿Olvidaste tu contraseña?</h1>
+      <p class="acceso__bajada">Ingresá el correo de tu cuenta y te enviamos un enlace para crear una contraseña nueva.</p>
+
+      <form class="acceso__formulario" id="form-recuperar" novalidate>
+        <div class="campo">
+          <label class="campo__etiqueta" for="recuperar-email">Correo electrónico</label>
+          <input class="campo__control" id="recuperar-email" type="email" autocomplete="email" placeholder="nombre@correo.com" required>
+          <p class="campo__error" id="recuperar-email-error"></p>
+        </div>
+        <button class="btn btn--primario btn--bloque" type="submit" id="boton-recuperar">Enviar enlace</button>
+      </form>
+
+      <p id="mensaje-recuperar" hidden></p>
+      <p class="acceso__alternativa">¿No tenés una cuenta? <a href="crear-cuenta.html">Registrate</a></p>
+    </section>
+
+    <svg class="ondas acceso__ondas" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#c3ddf4" d="M0 50c180-40 360-40 560-10s330 40 500 10 260-40 380-20v60H0z"/>
+      <path fill="#9fc8ec" d="M0 70c240-20 480-22 720-8s480 16 720-4v32H0z"/>
+    </svg>
+  </main>
+
+  <footer class="pie-simple">
+    <div class="contenedor pie-simple__barra">
+      <p>© 2026 SENDA</p>
+      <ul class="pie-simple__enlaces pie__lista">
+        <li>Centro de ayuda</li>
+        <li>Términos y condiciones</li>
+        <li>Política de privacidad</li>
+        <li>Soporte: [correo de soporte]</li>
+      </ul>
+    </div>
+  </footer>
+
+</body>
+</html>

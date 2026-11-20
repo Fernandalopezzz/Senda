@@ -1,0 +1,314 @@
+rules_version = '2';
+
+// Reglas de seguridad de SENDA.
+// Los guards de JavaScript solo controlan qué pantalla se ve. Estas reglas son las que
+// protegen los datos: se aplican en el servidor de Firebase y no se pueden saltear desde el navegador.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Funciones auxiliares ----------
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function rutaUsuario() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
+    }
+
+    function rolActual() {
+      return exists(rutaUsuario()) ? get(rutaUsuario()).data.rol : null;
+    }
+
+    function esAdmin() {
+      return autenticado() && rolActual() == 'admin';
+    }
+
+    // Cuenta personal de un cliente: guarda favoritos, opina y comenta. No publica precios.
+    function esCliente() {
+      return autenticado() && rolActual() == 'cliente';
+    }
+
+    // Solo los comercios validados por un administrador ("comercio") pueden publicar.
+    function esComercioAprobado() {
+      return autenticado() && rolActual() == 'comercio';
+    }
+
+    function texto(valor, minimo, maximo) {
+      return valor is string && valor.size() >= minimo && valor.size() <= maximo;
+    }
+
+    function comercioValido(datos) {
+      return datos.keys().hasOnly(['nombre', 'dueno', 'direccion', 'telefono', 'horario', 'foto', 'fondo'])
+        && texto(datos.nombre, 2, 120)
+        && (!('dueno' in datos) || texto(datos.dueno, 0, 120))
+        && (!('direccion' in datos) || texto(datos.direccion, 0, 120))
+        && (!('telefono' in datos) || texto(datos.telefono, 0, 25))
+        && (!('horario' in datos) || texto(datos.horario, 0, 120))
+        // Foto y fondo: imagen JPG guardada como data URL (ver imagenesService.js).
+        && (!('foto' in datos) || texto(datos.foto, 0, 90000))
+        && (!('fondo' in datos) || texto(datos.fondo, 0, 300000));
+    }
+
+    // true si quien escribe es el administrador y la cuenta de comercio indicada está bloqueada.
+    // Dentro de una escritura en lote, get() lee el estado anterior, así se puede borrar el rol
+    // en la misma operación.
+    function esComercioBloqueado(comercioId) {
+      return esAdmin()
+        && get(/databases/$(database)/documents/usuarios/$(comercioId)).data.rol == 'rechazado';
+    }
+
+    // creadorId: uid del comercio que cargó el producto. Solo ese comercio puede editar sus datos.
+    function productoValido(datos) {
+      // presentacion y etiquetas son opcionales: los productos cargados antes no los tienen.
+      return datos.keys().hasOnly(['nombre', 'marca', 'descripcion', 'imagen', 'creadorId', 'presentacion', 'etiquetas'])
+        && datos.keys().hasAll(['nombre', 'marca', 'descripcion', 'imagen', 'creadorId'])
+        && texto(datos.get('presentacion', ''), 0, 30)
+        && datos.get('etiquetas', []) is list
+        && datos.get('etiquetas', []).size() <= 6
+        && datos.creadorId is string
+        && texto(datos.nombre, 2, 120)
+        && texto(datos.marca, 0, 120)
+        && texto(datos.descripcion, 0, 500)
+        && texto(datos.imagen, 0, 250000); // imagen JPG como data URL (ver imagenesService.js) o vacío
+    }
+
+    function precioValido(datos) {
+      return datos.keys().hasOnly(['productoId', 'comercioId', 'precioOriginal', 'porcentajeDescuento',
+                                   'precioFinal', 'disponible', 'fechaActualizacion'])
+        && datos.keys().hasAll(['productoId', 'comercioId', 'precioOriginal', 'porcentajeDescuento',
+                                'precioFinal', 'disponible', 'fechaActualizacion'])
+        && datos.precioOriginal is number && datos.precioOriginal > 0
+        && datos.porcentajeDescuento is number
+        && datos.porcentajeDescuento >= 0 && datos.porcentajeDescuento < 100
+        && datos.precioFinal is number && datos.precioFinal > 0
+        && datos.precioFinal <= datos.precioOriginal
+        && datos.disponible is bool
+        && datos.fechaActualizacion == request.time;
+    }
+
+    // ---------- usuarios ----------
+    // Documento con ID = uid. Campo: rol.
+    // Lectura pública: las páginas sin cuenta necesitan saber si un comercio está validado.
+    match /usuarios/{uid} {
+      allow read: if true;
+
+      // Registro: un comercio nuevo siempre queda "pendiente" y una cuenta personal es "cliente".
+      // Nunca puede darse a sí misma el rol "comercio" o "admin".
+      allow create: if autenticado()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['rol'])
+        && request.resource.data.rol in ['pendiente', 'cliente'];
+
+      // Una cuenta personal puede eliminarse a sí misma (derecho de supresión de sus datos).
+      allow delete: if autenticado()
+        && request.auth.uid == uid
+        && resource.data.rol == 'cliente';
+
+      // Solo un administrador valida comercios, y solo puede cambiar el rol.
+      allow update: if esAdmin()
+        && request.auth.uid != uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol'])
+        && request.resource.data.rol in ['pendiente', 'comercio', 'rechazado'];
+
+      // El administrador elimina cuentas de comercio solo si antes las bloqueó.
+      allow delete: if esAdmin() && resource.data.rol == 'rechazado';
+    }
+
+    // ---------- comercios ----------
+    // Documento con ID = uid de la cuenta del comercio. Lectura pública.
+    match /comercios/{comercioId} {
+      allow read: if true;
+
+      // La creación la hace el registro, con la cuenta todavía pendiente.
+      allow create: if autenticado()
+        && request.auth.uid == comercioId
+        && comercioValido(request.resource.data);
+
+      allow update: if esComercioAprobado()
+        && request.auth.uid == comercioId
+        && comercioValido(request.resource.data);
+
+      // Al eliminar una cuenta bloqueada, el administrador borra también su perfil.
+      allow delete: if esComercioBloqueado(comercioId);
+    }
+
+    // ---------- comerciosPrivados ----------
+    // Correo de cada cuenta de comercio (ID = uid). No es público: lo leen el propio comercio y el
+    // administrador, que lo necesita para contactar a quien pidió la cuenta. Solo se puede guardar
+    // el correo real de la sesión (request.auth.token.email), así nadie carga uno ajeno.
+    match /comerciosPrivados/{comercioId} {
+      allow read: if autenticado() && (request.auth.uid == comercioId || esAdmin());
+      allow create, update: if autenticado()
+        && request.auth.uid == comercioId
+        && request.resource.data.keys().hasOnly(['correo'])
+        && request.resource.data.correo == request.auth.token.email;
+      allow delete: if esComercioBloqueado(comercioId);
+    }
+
+    // ---------- productos ----------
+    // Catálogo compartido: varios comercios pueden publicar el mismo producto, cada uno con su precio.
+    // Los datos del producto (nombre, marca, descripción e imagen) solo los edita el comercio que lo creó.
+    // Lectura pública.
+    match /productos/{productoId} {
+      allow read: if true;
+
+      allow create: if esComercioAprobado()
+        && request.resource.data.creadorId == request.auth.uid
+        && productoValido(request.resource.data);
+
+      // Los productos creados antes de agregar creadorId no tienen dueño y nadie puede editarlos.
+      allow update: if esComercioAprobado()
+        && resource.data.get('creadorId', '') == request.auth.uid
+        && request.resource.data.creadorId == resource.data.creadorId
+        && productoValido(request.resource.data);
+
+      // Productos creados antes de agregar creadorId: el administrador solo puede asignarles dueño
+      // (lo usa "Cargar comercios de prueba"). No puede cambiar ningún otro dato.
+      allow update: if esAdmin()
+        && !('creadorId' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['creadorId'])
+        && request.resource.data.creadorId is string;
+
+      // El administrador elimina un producto cuando ya ningún comercio lo publica
+      // (ver eliminarPublicacionPorAdmin en preciosService.js).
+      allow delete: if esAdmin();
+    }
+
+    // ---------- precios ----------
+    // Une un producto con un comercio. Lectura pública.
+    match /precios/{precioId} {
+      allow read: if true;
+
+      // existsAfter permite crear el producto y su precio en la misma escritura en lote.
+      allow create: if esComercioAprobado()
+        && request.resource.data.comercioId == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/productos/$(request.resource.data.productoId))
+        && precioValido(request.resource.data);
+
+      // Cada comercio modifica solo sus precios y no puede cambiar a qué producto o comercio pertenecen.
+      allow update: if esComercioAprobado()
+        && resource.data.comercioId == request.auth.uid
+        && request.resource.data.comercioId == resource.data.comercioId
+        && request.resource.data.productoId == resource.data.productoId
+        && precioValido(request.resource.data);
+
+      // El comercio no elimina sus precios: marca el producto sin stock.
+      // Solo el administrador elimina una publicación que no es apta para la venta.
+      allow delete: if esAdmin();
+    }
+
+    // ---------- clientes ----------
+    // Perfil público de una cuenta personal (ID = uid): nombre de usuario y foto.
+    // Es lo que ven los demás junto a sus comentarios y en su perfil público.
+    // El nombre real está en clientesPrivados y el correo queda solo en Authentication.
+    match /clientes/{clienteId} {
+      allow read: if true;
+
+      allow create: if autenticado()
+        && request.auth.uid == clienteId
+        && request.resource.data.keys().hasOnly(['usuario', 'foto'])
+        && request.resource.data.keys().hasAll(['usuario', 'foto'])
+        && request.resource.data.usuario is string
+        && request.resource.data.usuario.matches('^[a-z0-9._]{3,20}$')
+        && texto(request.resource.data.foto, 0, 90000);
+
+      // El nombre de usuario no se cambia: identifica a la persona en los comentarios.
+      allow update: if esCliente()
+        && request.auth.uid == clienteId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['foto'])
+        && texto(request.resource.data.foto, 0, 90000);
+
+      // Al eliminar la cuenta personal se borra su perfil.
+      allow delete: if esCliente() && request.auth.uid == clienteId;
+    }
+
+    // ---------- clientesPrivados ----------
+    // Datos privados de la cuenta personal (ID = uid). Solo los lee y los cambia su dueño.
+    match /clientesPrivados/{clienteId} {
+      allow read: if autenticado() && request.auth.uid == clienteId;
+      allow create, update: if autenticado()
+        && request.auth.uid == clienteId
+        && request.resource.data.keys().hasOnly(['nombre'])
+        && texto(request.resource.data.nombre, 2, 60);
+      allow delete: if esCliente() && request.auth.uid == clienteId;
+    }
+
+    // ---------- favoritos ----------
+    // Lista privada de productos guardados por una cuenta personal (ID = uid). Solo la ve su dueño.
+    // precios guarda, por producto, el mejor precio que la persona ya vio. Si el precio actual es otro,
+    // SENDA le avisa que subió o bajó. null significa que no había stock en ningún comercio.
+    // avisos: false si la persona apagó los avisos de precio en Configuración.
+    match /favoritos/{clienteId} {
+      allow read: if esCliente() && request.auth.uid == clienteId;
+      allow create, update: if esCliente()
+        && request.auth.uid == clienteId
+        && request.resource.data.keys().hasOnly(['productos', 'precios', 'avisos'])
+        && request.resource.data.get('avisos', true) is bool
+        && request.resource.data.get('productos', []) is list
+        && request.resource.data.get('productos', []).size() <= 100
+        && request.resource.data.get('precios', {}) is map
+        && request.resource.data.get('precios', {}).size() <= 100;
+      allow delete: if esCliente() && request.auth.uid == clienteId;
+    }
+
+    // ---------- reacciones ----------
+    // "Me gusta" o "No me gusta" de una cuenta personal sobre un producto.
+    // ID = <productoId>_<uid>, así cada persona tiene una sola reacción por producto.
+    match /reacciones/{reaccionId} {
+      allow read: if true;
+      allow create, update: if esCliente()
+        && reaccionId == request.resource.data.productoId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['productoId', 'clienteId', 'valor'])
+        && request.resource.data.clienteId == request.auth.uid
+        && request.resource.data.productoId is string
+        && request.resource.data.valor in ['me-gusta', 'no-me-gusta'];
+      allow delete: if esCliente() && resource.data.clienteId == request.auth.uid;
+    }
+
+    // ---------- comentarios ----------
+    // Comentarios de cuentas personales sobre un producto. comercioId indica de qué comercio habla
+    // (por ejemplo, "esta oferta ya no está") o queda vacío si es un comentario general.
+    // No se editan. Los borra su autor o el administrador si no cumplen las normas.
+    match /comentarios/{comentarioId} {
+      allow read: if true;
+      allow create: if esCliente()
+        && request.resource.data.keys().hasOnly(['productoId', 'comercioId', 'clienteId', 'texto', 'fecha'])
+        && request.resource.data.keys().hasAll(['productoId', 'comercioId', 'clienteId', 'texto', 'fecha'])
+        && request.resource.data.clienteId == request.auth.uid
+        && request.resource.data.productoId is string
+        && texto(request.resource.data.comercioId, 0, 128)
+        && texto(request.resource.data.texto, 3, 300)
+        && request.resource.data.fecha == request.time;
+      allow update: if false;
+      allow delete: if esAdmin() || (esCliente() && resource.data.clienteId == request.auth.uid);
+    }
+
+    // ---------- notificaciones ----------
+    // Avisos de SENDA para un comercio, por ejemplo cuando el administrador elimina uno de sus productos.
+    // El comercio los ve la próxima vez que abre la aplicación con su sesión iniciada.
+    match /notificaciones/{notificacionId} {
+      allow read: if autenticado()
+        && (resource.data.comercioId == request.auth.uid || esAdmin());
+
+      allow create: if esAdmin()
+        && request.resource.data.keys().hasOnly(['comercioId', 'tipo', 'productoNombre', 'fecha', 'leida'])
+        && request.resource.data.keys().hasAll(['comercioId', 'tipo', 'productoNombre', 'fecha', 'leida'])
+        && request.resource.data.comercioId is string
+        && request.resource.data.tipo == 'producto-eliminado'
+        && texto(request.resource.data.productoNombre, 0, 120)
+        && request.resource.data.fecha == request.time
+        && request.resource.data.leida == false;
+
+      // El comercio solo puede marcar sus avisos como leídos.
+      allow update: if autenticado()
+        && resource.data.comercioId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leida'])
+        && request.resource.data.leida == true;
+
+      // Se borran junto con la cuenta del comercio que los recibió.
+      allow delete: if esAdmin();
+    }
+  }
+}

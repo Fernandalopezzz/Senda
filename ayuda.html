@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <title>Ayuda · SENDA</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
+  <script src="js/ui/tema-inicial.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script type="module" src="js/pages/ayuda.page.js"></script>
+</head>
+<body class="pagina-ayuda">
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra" id="barra-publica">
+      <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+      <nav class="navegacion" aria-label="Navegación principal">
+        <a class="navegacion__enlace" data-nav="inicio" href="index.html">Inicio</a>
+        <a class="navegacion__enlace" data-nav="destacados" href="index.html#destacados">Precios Destacados</a>
+        <a class="navegacion__enlace" data-nav="ofertas" href="index.html#ofertas">Ofertas</a>
+      </nav>
+      <div class="encabezado__acciones" data-acciones-visitante>
+        <a class="btn btn--contorno btn--chico" href="login.html">Iniciar sesión</a>
+        <a class="btn btn--blanco btn--chico" href="crear-cuenta.html">Registrarse</a>
+      </div>
+      <div class="encabezado__acciones" data-acciones-sesion hidden>
+        <a class="cuenta-sesion" data-enlace-panel href="gestion-comercio.html" title="Ver mi cuenta">
+          <img class="cuenta-sesion__foto" data-foto-sesion alt="" hidden>
+          <span class="avatar avatar--blanco cuenta-sesion__iniciales" data-iniciales-sesion aria-hidden="true"></span>
+          <span class="cuenta-sesion__nombre" data-nombre-sesion>Mi cuenta</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="contenedor ayuda">
+    <nav class="ayuda__indice tarjeta" aria-label="Secciones de ayuda">
+      <h2 class="ayuda__indice-titulo">Ayuda</h2>
+      <a href="#ayuda">Cómo usar SENDA</a>
+      <a href="#terminos">Términos y condiciones</a>
+      <a href="#privacidad">Política de privacidad</a>
+      <a href="#consumidor">Defensa del consumidor</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <div class="ayuda__contenido">
+      <section class="ayuda__seccion tarjeta" id="ayuda" aria-labelledby="titulo-ayuda">
+        <h1 class="ayuda__titulo" id="titulo-ayuda">Cómo usar SENDA</h1>
+        <p>SENDA reúne en un solo lugar los precios que publican los comercios de Río Gallegos. Sirve para comparar el precio de un mismo producto y elegir dónde comprar. No es una tienda. Las compras se hacen directamente en cada comercio.</p>
+        <h2>Preguntas frecuentes</h2>
+        <details open>
+          <summary>¿Necesito una cuenta para comparar precios?</summary>
+          <p>No. Cualquier persona puede buscar productos, ver los precios y entrar al perfil de cada comercio. La cuenta personal solo hace falta para guardar favoritos en todos tus dispositivos, recibir avisos de precio, reaccionar y comentar.</p>
+        </details>
+        <details>
+          <summary>¿Quién carga los precios?</summary>
+          <p>Cada comercio publica y actualiza sus propios precios, descuentos y stock. La fecha de la última actualización aparece junto a cada precio. Si encontrás una diferencia en el local, podés avisar a los demás con un comentario.</p>
+        </details>
+        <details>
+          <summary>¿Cómo registro mi comercio?</summary>
+          <p>Desde <a href="registro-comercio.html">Registrar mi comercio</a>. La cuenta queda pendiente hasta que la administración de SENDA confirme que el comercio existe. Después de la validación, el comercio ya puede publicar productos.</p>
+        </details>
+        <details>
+          <summary>¿Por qué no aparece un producto?</summary>
+          <p>Solo aparecen los productos que publicó algún comercio validado. Probá buscar por la marca o por una parte del nombre, sin el tamaño del envase.</p>
+        </details>
+        <details>
+          <summary>¿Cómo funcionan los avisos de precio?</summary>
+          <p>Al guardar un producto en favoritos con una cuenta personal, SENDA recuerda el mejor precio que viste. Cuando ese precio cambia, el inicio muestra un aviso. Los avisos se apagan desde Configuración, en tu perfil.</p>
+        </details>
+      </section>
+
+      <section class="ayuda__seccion tarjeta" id="terminos" aria-labelledby="titulo-terminos">
+        <h2 class="ayuda__titulo" id="titulo-terminos">Términos y condiciones</h2>
+        <ul>
+          <li>SENDA es un comparador de precios. No vende productos, no cobra pagos y no hace envíos.</li>
+          <li>Los precios, descuentos y stock los informa cada comercio, que es responsable de mantenerlos actualizados. Pueden cambiar sin aviso.</li>
+          <li>Los comercios solo pueden publicar después de ser validados por la administración.</li>
+          <li>La administración puede eliminar productos que no sean aptos para la venta y bloquear cuentas que no cumplan estas condiciones.</li>
+          <li>Los comentarios tienen que referirse al producto o al precio publicado, con respeto. Los comentarios ofensivos se eliminan.</li>
+        </ul>
+      </section>
+
+      <section class="ayuda__seccion tarjeta" id="privacidad" aria-labelledby="titulo-privacidad">
+        <h2 class="ayuda__titulo" id="titulo-privacidad">Política de privacidad</h2>
+        <ul>
+          <li>Para comparar precios no se pide ningún dato personal.</li>
+          <li>De una cuenta personal, los demás solo ven el nombre de usuario, la foto y los comentarios publicados. El nombre real, el correo y los favoritos son privados.</li>
+          <li>Del comercio se muestran los datos que el propio comercio publica, como dirección, teléfono y horario. El correo de la cuenta solo lo ve la administración.</li>
+          <li>Las búsquedas recientes que usa la sección "Para vos" se guardan solo en tu navegador y se borran desde el inicio.</li>
+          <li>Una cuenta personal se puede eliminar desde Configuración. Al eliminarla se borran su perfil, sus favoritos, sus reacciones y sus comentarios.</li>
+        </ul>
+      </section>
+
+      <section class="ayuda__seccion tarjeta" id="consumidor" aria-labelledby="titulo-consumidor">
+        <h2 class="ayuda__titulo" id="titulo-consumidor">Defensa del consumidor</h2>
+        <p>La compra se hace en el comercio, por eso los reclamos sobre un producto o un precio se presentan ante ese comercio. La Ley 24.240 de Defensa del Consumidor obliga a los comercios a exhibir los precios y a respetarlos. Si un reclamo no se resuelve, se puede acudir a la oficina de Defensa del Consumidor de la provincia de Santa Cruz.</p>
+      </section>
+
+      <section class="ayuda__seccion tarjeta" id="contacto" aria-labelledby="titulo-contacto">
+        <h2 class="ayuda__titulo" id="titulo-contacto">Contacto</h2>
+        <p>SENDA es un proyecto de la materia Programación Aplicada de 6.° I Informática, en Río Gallegos, Santa Cruz. Para consultas sobre una cuenta, un comercio o un producto eliminado, el contacto se hace con el equipo del proyecto.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="pie" id="pie">
+    <div class="contenedor">
+      <div class="pie__grilla">
+        <div class="pie__marca">
+          <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+          <p class="pie__descripcion">Compará el precio de un mismo producto en los comercios de tu zona y elegí dónde comprar.</p>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Explorar</h2>
+          <ul class="pie__lista">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="index.html#destacados">Precios destacados</a></li>
+            <li><a href="resultados.html?vista=ofertas">Ofertas y descuentos</a></li>
+            <li><a href="resultados.html?vista=comercios">Comercios</a></li>
+            <li><a href="resultados.html?vista=favoritos">Favoritos</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Para comercios</h2>
+          <ul class="pie__lista">
+            <li><a href="registro-comercio.html">Registrar mi comercio</a></li>
+            <li><a href="login.html">Iniciar sesión</a></li>
+            <li><a href="login.html">Cargar productos</a></li>
+            <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Soporte</h2>
+          <ul class="pie__lista">
+            <li><a href="ayuda.html#ayuda">Centro de ayuda</a></li>
+            <li><a href="ayuda.html#terminos">Términos y condiciones</a></li>
+            <li><a href="ayuda.html#privacidad">Política de privacidad</a></li>
+            <li><a href="ayuda.html#consumidor">Defensa del consumidor</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Contacto</h2>
+          <ul class="pie__lista pie__contacto">
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Río Gallegos, Santa Cruz</li>
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><a href="ayuda.html#contacto">Escribinos desde Ayuda</a></li>
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Proyecto escolar · 6.° I Informática</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie__inferior">
+        <p>© 2026 SENDA. Todos los derechos reservados.</p>
+        <p>Los precios los publica cada comercio y pueden cambiar sin aviso.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

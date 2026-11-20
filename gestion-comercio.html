@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <title>Panel · SENDA</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
+  <script src="js/ui/tema-inicial.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script type="module" src="js/pages/gestionComercio.page.js"></script>
+</head>
+<body class="pagina-panel">
+
+  <!-- Se muestra mientras el guard comprueba la sesión -->
+  <div class="carga-pagina" id="carga-pagina">
+    <div class="estado" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p class="estado__texto" id="texto-carga-pagina">Comprobando tu sesión...</p>
+    </div>
+  </div>
+
+  <header class="encabezado encabezado--panel" id="perfil">
+    <div class="contenedor encabezado__barra">
+      <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+      <!-- Navegación del comercio -->
+      <nav class="navegacion" aria-label="Navegación del panel" data-panel="comercio" hidden>
+        <a class="navegacion__enlace" href="index.html">Inicio</a>
+        <a class="navegacion__enlace navegacion__enlace--activo" href="#perfil" aria-current="page">Mi comercio</a>
+        <a class="navegacion__enlace" href="#mis-productos">Mis productos</a>
+        <a class="navegacion__enlace" href="ayuda.html">Ayuda</a>
+      </nav>
+      <!-- Navegación del administrador -->
+      <nav class="navegacion" aria-label="Navegación de administración" data-panel="admin" hidden>
+        <a class="navegacion__enlace navegacion__enlace--activo" href="#panel-admin" aria-current="page">Validación de comercios</a>
+        <a class="navegacion__enlace" href="index.html">Inicio</a>
+      </nav>
+      <div class="encabezado__acciones">
+        <a class="btn btn--contorno btn--chico" id="enlace-perfil-publico" href="perfil-comercio.html" data-panel="comercio" hidden>Ver perfil público</a>
+        <span class="avatar avatar--blanco" id="avatar-encabezado" aria-hidden="true" data-panel="comercio" hidden>--</span>
+        <span class="encabezado__rol" data-panel="admin" hidden>Administración</span>
+        <button class="enlace-boton encabezado__salir" type="button" id="boton-cerrar-sesion">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <!-- Cabecera del administrador -->
+    <div class="contenedor admin-cabecera" data-panel="admin" hidden>
+      <h1 class="admin-cabecera__titulo">Validación de comercios</h1>
+      <p class="admin-cabecera__texto">Cuentas de comercio separadas por estado. El tilde acepta o vuelve a habilitar un comercio. El tachito rechaza o bloquea, y en "Bloqueados" elimina la cuenta. El ojo abre el perfil del comercio para revisar o eliminar productos.</p>
+    </div>
+
+    <form class="contenedor perfil-comercio" id="form-perfil" novalidate data-panel="comercio" hidden>
+      <div class="perfil-comercio__barra">
+        <div class="perfil-comercio__estado">
+          <span class="perfil-comercio__modo">Modo edición del perfil</span>
+        </div>
+        <div class="perfil-comercio__acciones">
+          <label class="btn btn--contorno btn--chico" for="archivo-fondo" id="boton-fondo">
+            <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 8"/></svg>
+            Cambiar fondo
+          </label>
+          <input class="solo-lectores" id="archivo-fondo" type="file" accept="image/jpeg,image/png,image/webp">
+          <button class="btn btn--amarillo btn--chico" type="submit" id="boton-guardar-perfil">Guardar cambios</button>
+        </div>
+      </div>
+
+      <div class="perfil-comercio__cuerpo">
+        <div class="perfil-comercio__foto-bloque">
+          <div class="perfil-comercio__foto">
+            <img class="perfil-comercio__imagen" id="foto-comercio" alt="Foto del comercio" hidden>
+            <span class="perfil-comercio__iniciales" id="avatar-perfil" aria-hidden="true">--</span>
+          </div>
+          <label class="btn btn--blanco btn--chico perfil-comercio__editar-foto" for="archivo-foto" id="boton-foto">
+            <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>
+            Editar foto
+          </label>
+          <input class="solo-lectores" id="archivo-foto" type="file" accept="image/jpeg,image/png,image/webp">
+        </div>
+
+        <div class="perfil-comercio__campos">
+          <div class="campo">
+            <label class="campo__etiqueta" for="comercio-nombre">Nombre del comercio</label>
+            <input class="campo__control campo__control--destacado" id="comercio-nombre" type="text" maxlength="120" placeholder="Nombre de tu comercio" required>
+            <p class="campo__error"></p>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="comercio-telefono">Contacto</label>
+            <input class="campo__control" id="comercio-telefono" type="tel" maxlength="25" placeholder="Agregá un teléfono o WhatsApp...">
+            <p class="campo__error"></p>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="comercio-direccion">Dirección</label>
+            <input class="campo__control" id="comercio-direccion" type="text" maxlength="120" placeholder="Agregá la dirección...">
+            <p class="campo__error"></p>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="comercio-horario">Horario</label>
+            <input class="campo__control" id="comercio-horario" type="text" maxlength="120" placeholder="Agregá días y horario...">
+            <p class="campo__error"></p>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <svg class="ondas" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#3d8fd6" d="M0 52c160-30 330-38 520-12s380 30 560 6 270-34 360-20v64H0z"/>
+      <path style="fill: var(--fondo)" d="M0 78c240-16 480-16 720-4s480 12 720-4v20H0z"/>
+    </svg>
+  </header>
+
+  <!-- Panel del administrador: validación de comercios -->
+  <main class="contenedor admin" id="panel-admin" data-panel="admin" hidden>
+    <div class="pestanas" role="tablist" aria-label="Estado de los comercios">
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-pendiente" data-rol="pendiente" aria-selected="true" aria-controls="lista-solicitudes">
+        Pendientes <span class="pestanas__cantidad" data-cantidad="pendiente">0</span>
+      </button>
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-comercio" data-rol="comercio" aria-selected="false" aria-controls="lista-solicitudes">
+        Validados <span class="pestanas__cantidad" data-cantidad="comercio">0</span>
+      </button>
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-rechazado" data-rol="rechazado" aria-selected="false" aria-controls="lista-solicitudes">
+        Bloqueados <span class="pestanas__cantidad" data-cantidad="rechazado">0</span>
+      </button>
+    </div>
+    <section class="solicitudes-lista" id="lista-solicitudes" role="tabpanel" aria-labelledby="pestana-pendiente"></section>
+
+    <section class="credenciales tarjeta" id="credenciales-prueba" hidden aria-labelledby="titulo-credenciales">
+      <h2 class="credenciales__titulo" id="titulo-credenciales">Cuentas de prueba listas y validadas</h2>
+      <p class="credenciales__texto">Cerrá sesión e ingresá con cualquiera de estas cuentas. Los comercios modifican sus productos y las cuentas personales ven sus favoritos, avisos y comentarios.</p>
+      <table class="credenciales__tabla">
+        <thead><tr><th scope="col">Tipo</th><th scope="col">Cuenta</th><th scope="col">Correo</th><th scope="col">Contraseña</th></tr></thead>
+        <tbody id="tabla-credenciales"></tbody>
+      </table>
+    </section>
+
+    <!-- Herramienta para el equipo: crea comercios ficticios para probar y presentar -->
+    <div class="admin__prueba">
+      <button class="enlace-boton" type="button" id="boton-datos-prueba">Cargar datos de prueba</button>
+      <p class="admin-cabecera__progreso" id="progreso-datos-prueba" aria-live="polite"></p>
+    </div>
+  </main>
+
+  <!-- Panel del comercio: perfil y productos -->
+  <main class="contenedor panel" id="mis-productos" data-panel="comercio" hidden>
+    <aside class="filtros tarjeta" id="filtros" aria-label="Filtros de productos"></aside>
+
+    <section class="productos-panel" aria-labelledby="titulo-mis-productos">
+      <div class="productos-panel__cabecera">
+        <div>
+          <h1 class="seccion__titulo" id="titulo-mis-productos">Mis productos</h1>
+          <p class="seccion__bajada" id="resumen-productos">&nbsp;</p>
+        </div>
+        <button class="btn btn--oscuro" type="button" id="boton-agregar">
+          <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Agregar producto
+        </button>
+      </div>
+
+      <div class="lista-productos tarjeta" id="lista-productos"></div>
+
+      <div class="productos-panel__mas">
+        <button class="btn btn--linea btn--chico" type="button" id="boton-ver-mas" hidden>Ver más productos</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: agregar o editar producto -->
+  <dialog class="modal" id="modal-producto" aria-labelledby="titulo-modal-producto">
+    <form class="modal__contenido" id="form-producto" novalidate>
+      <div class="modal__cabecera">
+        <h2 class="modal__titulo" id="titulo-modal-producto">Agregar producto</h2>
+        <button class="modal__cerrar" type="button" data-cerrar-modal aria-label="Cerrar">
+          <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <p id="aviso-producto-compartido" class="mensaje mensaje--info" hidden>Este producto lo cargó tu comercio. Si otros comercios también lo venden, los cambios en el nombre, la marca, la descripción o la imagen se ven en sus publicaciones.</p>
+
+      <div class="campo" id="bloque-existente">
+        <label class="campo__etiqueta" for="producto-existente">Producto</label>
+        <select class="campo__control" id="producto-existente"></select>
+        <p class="campo__ayuda">Si el producto ya está en SENDA, elegilo para que se compare con otros comercios.</p>
+        <p class="campo__error"></p>
+      </div>
+
+      <div class="grilla-campos" id="bloque-datos-producto">
+        <div class="campo campo--ancho">
+          <label class="campo__etiqueta" for="producto-nombre">Nombre</label>
+          <input class="campo__control" id="producto-nombre" type="text" maxlength="120" placeholder="Ej.: Yerba mate tradicional 500 g">
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="producto-marca">Marca</label>
+          <input class="campo__control" id="producto-marca" type="text" maxlength="120">
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="producto-presentacion">Presentación (opcional)</label>
+          <input class="campo__control" id="producto-presentacion" type="text" maxlength="30" placeholder="Ej.: 1 kg, 500 g, 900 ml">
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="producto-etiquetas">Etiquetas (opcional)</label>
+          <input class="campo__control" id="producto-etiquetas" type="text" maxlength="160" placeholder="Ej.: Natural, Sabor intenso">
+          <p class="campo__ayuda">Separadas por coma. Hasta 6.</p>
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo campo--ancho">
+          <label class="campo__etiqueta" for="producto-descripcion">Descripción</label>
+          <textarea class="campo__control" id="producto-descripcion" maxlength="500"></textarea>
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo campo--ancho">
+          <span class="campo__etiqueta">Imagen (opcional)</span>
+          <div class="selector-imagen">
+            <div class="imagen-producto selector-imagen__vista" id="vista-imagen-producto"></div>
+            <div class="selector-imagen__acciones" id="acciones-imagen-producto">
+              <label class="btn btn--linea btn--chico" for="producto-imagen">Elegir imagen</label>
+              <input class="solo-lectores" id="producto-imagen" type="file" accept="image/jpeg,image/png,image/webp">
+              <p class="campo__ayuda">JPG, PNG o WEBP, hasta 5 MB. SENDA la achica y la guarda junto con el producto.</p>
+            </div>
+          </div>
+          <p class="campo__error"></p>
+        </div>
+      </div>
+
+      <div class="grilla-campos" id="bloque-precio-nuevo">
+        <div class="campo">
+          <label class="campo__etiqueta" for="nuevo-precio-original">Precio ($)</label>
+          <input class="campo__control" id="nuevo-precio-original" type="number" min="0" step="0.01" inputmode="decimal">
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="nuevo-descuento">Descuento (%)</label>
+          <input class="campo__control" id="nuevo-descuento" type="number" min="0" max="99" step="1" value="0" inputmode="numeric">
+          <p class="campo__error"></p>
+        </div>
+        <label class="opcion campo--ancho"><input type="checkbox" id="nuevo-disponible" checked> Hay stock de este producto</label>
+        <p class="precio-final campo--ancho" id="nuevo-precio-final" aria-live="polite"></p>
+      </div>
+
+      <p id="mensaje-producto" hidden></p>
+
+      <div class="modal__acciones">
+        <button class="btn btn--linea" type="button" data-cerrar-modal>Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="boton-guardar-producto">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: actualizar precio -->
+  <dialog class="modal modal--chico" id="modal-precio" aria-labelledby="titulo-modal-precio">
+    <form class="modal__contenido" id="form-precio" novalidate>
+      <div class="modal__cabecera">
+        <div>
+          <h2 class="modal__titulo" id="titulo-modal-precio">Actualizar precio</h2>
+          <p class="modal__texto" id="nombre-producto-precio"></p>
+        </div>
+        <button class="modal__cerrar" type="button" data-cerrar-modal aria-label="Cerrar">
+          <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="grilla-campos">
+        <div class="campo">
+          <label class="campo__etiqueta" for="precio-original">Precio ($)</label>
+          <input class="campo__control" id="precio-original" type="number" min="0" step="0.01" inputmode="decimal">
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="precio-descuento">Descuento (%)</label>
+          <input class="campo__control" id="precio-descuento" type="number" min="0" max="99" step="1" inputmode="numeric">
+          <p class="campo__error"></p>
+        </div>
+        <p class="precio-final campo--ancho" id="precio-final" aria-live="polite"></p>
+      </div>
+
+      <p id="mensaje-precio" hidden></p>
+
+      <div class="modal__acciones">
+        <button class="btn btn--linea" type="button" data-cerrar-modal>Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="boton-guardar-precio">Guardar precio</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="pie" id="soporte">
+    <div class="contenedor">
+      <div class="pie__grilla">
+        <div class="pie__marca">
+          <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+          <p class="pie__descripcion">Compará el precio de un mismo producto en los comercios de tu zona y elegí dónde comprar.</p>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Explorar</h2>
+          <ul class="pie__lista">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="index.html#destacados">Precios destacados</a></li>
+            <li><a href="resultados.html?vista=ofertas">Ofertas y descuentos</a></li>
+            <li><a href="resultados.html?vista=comercios">Comercios</a></li>
+            <li><a href="resultados.html?vista=favoritos">Favoritos</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Para comercios</h2>
+          <ul class="pie__lista">
+            <li><a href="registro-comercio.html">Registrar mi comercio</a></li>
+            <li><a href="#perfil">Mi comercio</a></li>
+            <li><a href="#mis-productos">Cargar productos</a></li>
+            <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Soporte</h2>
+          <ul class="pie__lista">
+            <li><a href="ayuda.html#ayuda">Centro de ayuda</a></li>
+            <li><a href="ayuda.html#terminos">Términos y condiciones</a></li>
+            <li><a href="ayuda.html#privacidad">Política de privacidad</a></li>
+            <li><a href="ayuda.html#consumidor">Defensa del consumidor</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="pie__titulo">Contacto</h2>
+          <ul class="pie__lista pie__contacto">
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Río Gallegos, Santa Cruz</li>
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><a href="ayuda.html#contacto">Escribinos desde Ayuda</a></li>
+            <li><svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Proyecto escolar · 6.° I Informática</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie__inferior">
+        <p>© 2026 SENDA. Todos los derechos reservados.</p>
+        <p>Los precios los publica cada comercio y pueden cambiar sin aviso.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

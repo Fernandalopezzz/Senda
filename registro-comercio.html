@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <title>Registrar mi comercio · SENDA</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
+  <script src="js/ui/tema-inicial.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script type="module" src="js/pages/registroComercio.page.js"></script>
+</head>
+<body class="pagina-acceso">
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+      <a class="encabezado__volver" href="index.html">
+        <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        Volver al inicio
+      </a>
+    </div>
+  </header>
+
+  <main class="acceso">
+    <section class="acceso__tarjeta" id="vista-registro" aria-labelledby="titulo-registro">
+      <p class="logo acceso__logo"><img class="logo__imagen" src="assets/img/logo-senda.png" alt="SENDA" width="170" height="40"></p>
+      <h1 class="acceso__titulo" id="titulo-registro">Crear una cuenta</h1>
+      <p class="acceso__bajada">Registrá tu comercio y publicá tu catálogo</p>
+
+      <p id="mensaje-registro" hidden></p>
+
+      <form class="acceso__formulario" id="form-registro" novalidate>
+        <div class="campo">
+          <label class="campo__etiqueta" for="registro-nombre">Nombre del comercio</label>
+          <input class="campo__control" id="registro-nombre" type="text" maxlength="120" autocomplete="organization" placeholder="Ej.: Almacén La Esquina" required>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="registro-dueno">Nombre del dueño o responsable</label>
+          <input class="campo__control" id="registro-dueno" type="text" maxlength="120" autocomplete="name" placeholder="Ej.: Marta Gómez" required>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="registro-direccion">Dirección del comercio</label>
+          <input class="campo__control" id="registro-direccion" type="text" maxlength="120" autocomplete="street-address" placeholder="Ej.: Av. Néstor Kirchner 1250" required>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="registro-telefono">Teléfono o WhatsApp</label>
+          <input class="campo__control" id="registro-telefono" type="tel" maxlength="25" autocomplete="tel" placeholder="Ej.: 2966 410120" required>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="registro-email">Correo electrónico</label>
+          <input class="campo__control" id="registro-email" type="email" autocomplete="email" placeholder="nombre@gmail.com" required>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="registro-password">Contraseña</label>
+          <input class="campo__control" id="registro-password" type="password" autocomplete="new-password" placeholder="Creá una contraseña" required aria-describedby="ayuda-password">
+          <p class="campo__ayuda" id="ayuda-password">Al menos 8 caracteres, con letras y números.</p>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+
+        <p class="campo__ayuda">Después de crear la cuenta, un administrador de SENDA revisa los datos. Cuando la valide vas a poder ingresar y publicar tus productos.</p>
+
+        <div class="campo">
+          <label class="opcion opcion--terminos">
+            <input type="checkbox" id="registro-terminos">
+            <span>Acepto los términos y condiciones y la política de privacidad.</span>
+          </label>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <button class="btn btn--primario btn--bloque" type="submit" id="boton-registro">Crear cuenta</button>
+      </form>
+
+      <p class="acceso__alternativa">¿Ya estás registrado? <a href="login.html">Iniciá sesión</a></p>
+      <p class="acceso__alternativa">¿Querés guardar favoritos y opinar como cliente? <a href="registro-personal.html">Creá una cuenta personal</a></p>
+      <div class="separador"><span>o</span></div>
+      <button class="btn btn--linea btn--bloque boton-google" type="button" id="boton-google">
+        <span class="boton-google__logo" aria-hidden="true">G</span>
+        Registrarme con Google
+      </button>
+    </section>
+
+    <!-- Estado después de registrarse -->
+    <section class="acceso__tarjeta" id="vista-exito" aria-labelledby="titulo-exito" hidden>
+      <p class="logo acceso__logo"><img class="logo__imagen" src="assets/img/logo-senda.png" alt="SENDA" width="170" height="40"></p>
+      <h1 class="acceso__titulo" id="titulo-exito">¡Recibimos tu solicitud!</h1>
+      <p class="mensaje mensaje--exito" id="texto-exito"></p>
+      <p class="acceso__bajada" id="bajada-exito"></p>
+      <a class="btn btn--primario btn--bloque" id="accion-exito" href="index.html">Volver al inicio</a>
+    </section>
+
+    <svg class="ondas acceso__ondas" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#c3ddf4" d="M0 50c180-40 360-40 560-10s330 40 500 10 260-40 380-20v60H0z"/>
+      <path fill="#9fc8ec" d="M0 70c240-20 480-22 720-8s480 16 720-4v32H0z"/>
+    </svg>
+  </main>
+
+  <footer class="pie-simple">
+    <div class="contenedor pie-simple__barra">
+      <p>© 2026 SENDA</p>
+      <ul class="pie-simple__enlaces pie__lista">
+        <li>Centro de ayuda</li>
+        <li>Términos y condiciones</li>
+        <li>Política de privacidad</li>
+        <li>Soporte: [correo de soporte]</li>
+      </ul>
+    </div>
+  </footer>
+
+</body>
+</html>

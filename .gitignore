@@ -1,0 +1,15 @@
+# Documentación interna del equipo (contiene contraseñas)
+README-EQUIPO.md
+js/core/datosPrueba.js
+js/config/firebaseConfig.js
+
+# Material original y entregas (no forman parte del sitio)
+Productos/
+Usuarios/
+Entrega final/
+
+# Archivos del sistema y del editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/

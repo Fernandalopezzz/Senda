@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <title>Crear una cuenta · SENDA</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap">
+  <script src="js/ui/tema-inicial.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="pagina-acceso">
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="logo" href="index.html"><img class="logo__imagen" src="assets/img/logo-senda-blanco.png" alt="SENDA" width="135" height="32"></a>
+      <a class="encabezado__volver" href="index.html">
+        <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        Volver al inicio
+      </a>
+    </div>
+  </header>
+
+  <main class="acceso">
+    <section class="acceso__tarjeta acceso__tarjeta--ancha" aria-labelledby="titulo-crear">
+      <p class="logo acceso__logo"><img class="logo__imagen" src="assets/img/logo-senda.png" alt="SENDA" width="170" height="40"></p>
+      <h1 class="acceso__titulo" id="titulo-crear">Crear una cuenta</h1>
+      <p class="acceso__bajada">¿Qué tipo de cuenta querés crear?</p>
+
+      <div class="eleccion-cuenta">
+        <a class="eleccion-cuenta__opcion" href="registro-personal.html">
+          <svg class="icono eleccion-cuenta__icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          <span class="eleccion-cuenta__titulo">Cuenta personal</span>
+          <span class="eleccion-cuenta__texto">Para comprar. Guardá favoritos en cualquier dispositivo, opiná sobre los productos y avisá a otros clientes si un precio cambió.</span>
+        </a>
+        <a class="eleccion-cuenta__opcion" href="registro-comercio.html">
+          <svg class="icono eleccion-cuenta__icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/></svg>
+          <span class="eleccion-cuenta__titulo">Cuenta de comercio</span>
+          <span class="eleccion-cuenta__texto">Para vender. Publicá tus productos, precios, ofertas, dirección y horario. La cuenta la valida SENDA.</span>
+        </a>
+      </div>
+
+      <p class="acceso__alternativa">Para buscar y comparar precios no hace falta una cuenta.</p>
+      <p class="acceso__alternativa">¿Ya tenés una cuenta? <a href="login.html">Iniciá sesión</a></p>
+    </section>
+
+    <svg class="ondas acceso__ondas" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#c3ddf4" d="M0 50c180-40 360-40 560-10s330 40 500 10 260-40 380-20v60H0z"/>
+      <path fill="#9fc8ec" d="M0 70c240-20 480-22 720-8s480 16 720-4v32H0z"/>
+    </svg>
+  </main>
+
+  <footer class="pie-simple">
+    <div class="contenedor pie-simple__barra">
+      <p>© 2026 SENDA</p>
+      <ul class="pie-simple__enlaces pie__lista">
+        <li>Centro de ayuda</li>
+        <li>Términos y condiciones</li>
+        <li>Política de privacidad</li>
+        <li>Soporte: [correo de soporte]</li>
+      </ul>
+    </div>
+  </footer>
+
+</body>
+</html>

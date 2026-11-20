@@ -1,0 +1,354 @@
+/* =========================================================
+   SENDA · Estilos base
+   Variables de identidad, reset, tipografía, contenedor,
+   encabezado, ondas decorativas y pie de página.
+   ========================================================= */
+
+:root {
+  /* Colores de los wireframes */
+  --azul: #2a86d1;
+  --azul-claro: #4aa3e6;
+  --azul-oscuro: #1d6fb3;
+  --azul-suave: #e3effb;
+  --azul-fondo: #e8f2fc;
+  --marino: #13284b;
+  --marino-claro: #1f3a66;
+  --amarillo: #fbd96b;
+  --amarillo-oscuro: #f2c94c;
+  --verde: #1f7a3a;
+  --verde-claro: #2e9e4f;
+  --verde-suave: #e9f7ee;
+  --rojo: #d64545;
+  --rojo-suave: #fde6e6;
+  --fondo: #f3f6fb;
+  --blanco: #ffffff;
+  --texto: #13284b;
+  --texto-suave: #5b6b82;
+  --borde: #dfe7f1;
+  --campo: #f5f8fc;
+
+  --fuente-titulos: "Outfit", "Segoe UI", system-ui, sans-serif;
+  --fuente-texto: "DM Sans", "Segoe UI", system-ui, sans-serif;
+
+  --radio: 14px;
+  --radio-chico: 10px;
+  --sombra: 0 4px 18px rgba(19, 40, 75, 0.07);
+  --sombra-fuerte: 0 12px 40px rgba(19, 40, 75, 0.14);
+  --ancho-maximo: 1120px;
+  /* Fondo de tarjetas, formularios y paneles. En modo oscuro pasa a gris oscuro;
+     --blanco queda para el texto y los bordes blancos sobre el azul del encabezado. */
+  --superficie: #ffffff;
+  color-scheme: light;
+}
+
+/* ---------- Modo oscuro ----------
+   Se activa desde Configuración del perfil personal y se guarda en el navegador (localStorage).
+   Lo aplica js/ui/tema-inicial.js antes de dibujar la página, así no hay un destello blanco.
+   Los fondos blancos pasan a grises oscuros y los textos oscuros a grises claros.
+   El azul de marca, el verde de los precios y el rojo de las alertas se mantienen. */
+[data-tema="oscuro"] {
+  --fondo: #10161f;
+  --superficie: #1a2230;
+  --campo: #222c3c;
+  --borde: #2e3a4d;
+  --texto: #e6ebf2;
+  --texto-suave: #a3b0c2;
+  --marino: #0b1018;
+  --marino-claro: #18202c;
+  --azul-suave: #1f3550;
+  --azul-fondo: #182a40;
+  --azul-oscuro: #8cc4f2;
+  --verde: #6fd28f;
+  --verde-suave: #16301f;
+  --rojo-suave: #3b1f22;
+  --sombra: 0 4px 18px rgba(0, 0, 0, 0.35);
+  --sombra-fuerte: 0 12px 40px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* SENDA se diseña solo para navegador de computadora. No hay versión para celular:
+   con una ventana angosta la página mantiene su ancho y aparece la barra horizontal. */
+body {
+  margin: 0;
+  min-width: 1200px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--fuente-texto);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--texto);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  flex: 1;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  line-height: 1.2;
+  color: var(--texto);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--azul-oscuro);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--amarillo-oscuro);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: var(--ancho-maximo);
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+.icono {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Logo ----------
+   El logo es una imagen porque usa una tipografía propia.
+   Versión blanca sobre fondos azules y versión azul oscuro sobre fondos claros. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.logo__imagen {
+  width: auto;
+  height: 30px;
+}
+
+.acceso__logo {
+  justify-self: center;
+}
+
+.acceso__logo .logo__imagen {
+  height: 38px;
+}
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+  background: var(--azul);
+  color: var(--blanco);
+}
+
+.encabezado__barra {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-height: 64px;
+  flex-wrap: wrap;
+}
+
+/* La barra del encabezado ocupa todo el ancho de la pantalla, sin el límite de .contenedor.
+   El logo queda en la esquina izquierda y la cuenta o los botones en la esquina derecha. */
+.contenedor.encabezado__barra {
+  max-width: none;
+  padding-inline: 24px;
+}
+
+.navegacion {
+  display: flex;
+  gap: 22px;
+  flex: 1;
+}
+
+.navegacion__enlace {
+  position: relative;
+  padding: 4px 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--blanco);
+  text-decoration: none;
+  opacity: 0.92;
+}
+
+.navegacion__enlace:hover {
+  opacity: 1;
+}
+
+.navegacion__enlace--activo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--amarillo);
+}
+
+.encabezado__acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.encabezado__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--blanco);
+  text-decoration: none;
+}
+
+/* ---------- Ondas decorativas ---------- */
+.ondas {
+  display: block;
+  width: 100%;
+  height: 90px;
+}
+
+/* ---------- Pie de página ---------- */
+.pie {
+  margin-top: 64px;
+  padding: 44px 0 24px;
+  background: var(--marino);
+  color: #c9d4e6;
+  font-size: 0.88rem;
+}
+
+.pie__grilla {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(4, 1fr);
+  gap: 28px;
+}
+
+.pie__descripcion {
+  margin-top: 12px;
+  max-width: 240px;
+  line-height: 1.6;
+}
+
+.pie__titulo {
+  margin-bottom: 12px;
+  font-family: var(--fuente-titulos);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--blanco);
+}
+
+.pie__lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie__lista a {
+  color: #c9d4e6;
+  text-decoration: none;
+}
+
+.pie__lista a:hover {
+  color: var(--blanco);
+  text-decoration: underline;
+}
+
+.pie__contacto li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.pie__contacto .icono {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.pie__inferior {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.8rem;
+}
+
+/* Pie simple de las pantallas de acceso */
+.pie-simple {
+  padding: 16px 0;
+  background: var(--marino);
+  color: #c9d4e6;
+  font-size: 0.8rem;
+}
+
+.pie-simple__barra {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pie-simple__enlaces {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
