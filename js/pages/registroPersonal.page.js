@@ -164,7 +164,7 @@ elementos.botonGoogle.addEventListener("click", async () => {
 // ---------- Validación al salir de cada campo ----------
 
 elementos.usuario.addEventListener("input", () => {
-  // Se escribe siempre en minúsculas y sin la arroba.
+  // Se escribe sin la arroba. Las mayúsculas se respetan.
   const limpio = normalizarNombreUsuario(elementos.usuario.value);
   if (limpio !== elementos.usuario.value) elementos.usuario.value = limpio;
 });
