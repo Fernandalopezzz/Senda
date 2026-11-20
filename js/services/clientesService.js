@@ -18,7 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 import { db } from "../config/firebase.js";
 import { COLECCIONES, ROLES } from "../core/constants.js";
-import { normalizarNombreUsuario, claveNombreUsuario } from "../core/validators.js";
+import { normalizarNombreUsuario } from "../core/validators.js";
 import { prepararImagen } from "./imagenesService.js";
 
 // Perfil público: { id, usuario, foto } o null.
@@ -44,12 +44,12 @@ export async function obtenerClientes(uids) {
   return new Map(unicos.map((uid, i) => [uid, perfiles[i]]));
 }
 
-// Firestore no compara textos sin distinguir mayúsculas. Como la cantidad de cuentas personales es
-// chica, se leen todos los nombres de usuario y se comparan en minúsculas.
 export async function existeNombreUsuario(usuario) {
-  const buscado = claveNombreUsuario(usuario);
-  const snapshot = await getDocs(collection(db, COLECCIONES.CLIENTES));
-  return snapshot.docs.some((documento) => claveNombreUsuario(documento.data().usuario) === buscado);
+  const consulta = query(
+    collection(db, COLECCIONES.CLIENTES),
+    where("usuario", "==", normalizarNombreUsuario(usuario))
+  );
+  return !(await getDocs(consulta)).empty;
 }
 
 // Crea el rol y el perfil en una sola escritura en lote: se guardan los dos o ninguno.

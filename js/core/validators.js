@@ -122,17 +122,10 @@ function capitalizar(texto) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-// Nombre de usuario de una cuenta personal: de 3 a 20 caracteres, letras sin tilde (mayúsculas o
-// minúsculas), números, punto o guion bajo. Se guarda sin la arroba y respetando las mayúsculas,
-// por ejemplo "lider_Ruiz". Coincide con la regla de firestore.rules.
+// Nombre de usuario de una cuenta personal: de 3 a 20 caracteres, minúsculas, números, punto o guion bajo.
+// Se guarda sin la arroba. Coincide con la regla de firestore.rules.
 export function normalizarNombreUsuario(valor) {
-  return String(valor ?? "").trim().replace(/^@/, "");
-}
-
-// Versión en minúsculas para comparar. Así "Lider_Ruiz" y "lider_ruiz" cuentan como el mismo nombre
-// y no pueden existir dos personas que solo se diferencien por una mayúscula.
-export function claveNombreUsuario(valor) {
-  return normalizarNombreUsuario(valor).toLowerCase();
+  return String(valor ?? "").trim().replace(/^@/, "").toLowerCase();
 }
 
 export function validarNombreUsuario(valor) {
@@ -140,7 +133,7 @@ export function validarNombreUsuario(valor) {
   if (!usuario) return "Elegí un nombre de usuario.";
   if (usuario.length < 3) return "El nombre de usuario tiene que tener al menos 3 caracteres.";
   if (usuario.length > 20) return "El nombre de usuario admite hasta 20 caracteres.";
-  if (!/^[A-Za-z0-9._]+$/.test(usuario)) return "Usá solo letras sin tilde, números, punto o guion bajo.";
+  if (!/^[a-z0-9._]+$/.test(usuario)) return "Usá solo letras sin tilde, números, punto o guion bajo.";
   return "";
 }
 

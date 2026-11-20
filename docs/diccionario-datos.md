@@ -88,7 +88,7 @@ Perfil público de cada cuenta personal (rol `cliente`). El ID es el `uid`. La l
 
 | Campo | Tipo | Descripción |
 |---|---|---|
-| usuario | string | Nombre de usuario, de 3 a 20 caracteres, con letras sin tilde (se respetan las mayúsculas), números, punto o guion bajo. Es único sin distinguir mayúsculas. No se puede cambiar. |
+| usuario | string | Nombre de usuario, de 3 a 20 caracteres, en minúsculas, con letras sin tilde, números, punto o guion bajo. No se puede cambiar. |
 | foto | string | Foto de perfil como JPG en formato data URL. Puede quedar vacía. |
 
 ## clientesPrivados
