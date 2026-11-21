@@ -1,6 +1,6 @@
 // Botón "Reportar" y tarjeta para elegir el motivo. Lo usan los comentarios, el detalle del producto
 // (producto y precio de cada comercio), el perfil del comercio y el perfil público de una cuenta.
-// También muestra los avisos de moderación que recibe el dueño de un contenido.
+// Los avisos que recibe el dueño de un contenido reportado se muestran en la campanita (campanita.js).
 //
 // Quién puede reportar: las cuentas personales y los comercios validados. Nadie reporta lo propio
 // y cada cuenta reporta una sola vez el mismo elemento.
@@ -9,7 +9,7 @@ import { MOTIVOS_REPORTE, ROLES } from "../../core/constants.js";
 import { manejarError } from "../../core/errores.js";
 import { escaparHTML, mostrarAviso, marcarErrorCampo } from "../feedback.js";
 import { obtenerCuentaActual } from "../../guards/sessionGuard.js";
-import { reportar, yaReporto, listarAvisosSinLeer, marcarAvisoLeido } from "../../services/reportesService.js";
+import { reportar, yaReporto } from "../../services/reportesService.js";
 
 const ICONO_BANDERA =
   '<svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>';
@@ -122,63 +122,6 @@ function pedirMotivo(datos) {
     dialogo.addEventListener("close", () => {
       dialogo.remove();
       resolve(respuesta);
-    });
-    dialogo.showModal();
-  });
-}
-
-// ---------- Avisos de moderación para el dueño del contenido ----------
-
-const TITULOS_AVISO = {
-  "en-revision": "Contenido en revisión",
-  advertencia: "Advertencia del equipo de SENDA",
-  oculto: "Contenido ocultado por SENDA",
-  aprobado: "Revisión terminada"
-};
-
-let avisosRevisados = false;
-
-// Muestra los avisos sin leer en una tarjeta y los marca como leídos al cerrarla.
-export async function revisarAvisosDeModeracion(uid) {
-  if (avisosRevisados || !uid) return;
-  avisosRevisados = true;
-  try {
-    const avisos = await listarAvisosSinLeer(uid);
-    if (avisos.length === 0) return;
-    await mostrarAvisos(avisos);
-    await Promise.all(avisos.map((aviso) => marcarAvisoLeido(aviso.id)));
-  } catch (error) {
-    manejarError(error, "Avisos de moderación");
-  }
-}
-
-function mostrarAvisos(avisos) {
-  return new Promise((resolve) => {
-    const dialogo = document.createElement("dialog");
-    dialogo.className = "modal";
-    dialogo.innerHTML = `
-      <div class="modal__contenido">
-        <h2 class="modal__titulo">${avisos.length === 1 ? "Tenés un aviso de SENDA" : `Tenés ${avisos.length} avisos de SENDA`}</h2>
-        <ul class="avisos-moderacion">
-          ${avisos
-            .map(
-              (aviso) => `
-            <li class="avisos-moderacion__item avisos-moderacion__item--${escaparHTML(aviso.tipo)}">
-              <strong>${escaparHTML(TITULOS_AVISO[aviso.tipo] ?? "Aviso")}</strong>
-              <p>${escaparHTML(aviso.texto)}</p>
-            </li>`
-            )
-            .join("")}
-        </ul>
-        <div class="modal__acciones">
-          <button type="button" class="btn btn--primario">Entendido</button>
-        </div>
-      </div>`;
-    document.body.append(dialogo);
-    dialogo.querySelector("button").addEventListener("click", () => dialogo.close());
-    dialogo.addEventListener("close", () => {
-      dialogo.remove();
-      resolve();
     });
     dialogo.showModal();
   });

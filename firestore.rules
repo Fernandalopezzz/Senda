@@ -184,9 +184,11 @@ service cloud.firestore {
     // creadorId: uid del comercio que cargó el producto. Solo ese comercio puede editar sus datos.
     function productoValido(datos) {
       // presentacion y etiquetas son opcionales: los productos cargados antes no los tienen.
-      return datos.keys().hasOnly(['nombre', 'marca', 'descripcion', 'imagen', 'creadorId', 'presentacion', 'etiquetas'])
+      return datos.keys().hasOnly(['nombre', 'marca', 'descripcion', 'imagen', 'creadorId', 'presentacion', 'etiquetas', 'codigoBarras'])
         && datos.keys().hasAll(['nombre', 'marca', 'descripcion', 'imagen', 'creadorId'])
         && texto(datos.get('presentacion', ''), 0, 30)
+        // Código de barras opcional: vacío o entre 8 y 14 números.
+        && (datos.get('codigoBarras', '') == '' || datos.get('codigoBarras', '').matches('^[0-9]{8,14}$'))
         && datos.get('etiquetas', []) is list
         && datos.get('etiquetas', []).size() <= 6
         && datos.creadorId is string

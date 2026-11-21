@@ -46,6 +46,7 @@ import {
   EVENTO_FAVORITOS
 } from "../services/productosService.js";
 import { cargarCatalogo } from "../services/preciosService.js";
+import { EVENTO_NOTIFICACIONES } from "../ui/components/campanita.js";
 import { obtenerOcultos, mostrarComercio, desbloquearCuenta } from "../services/bloqueosService.js";
 import { revisarCambiosDePrecio, marcarCambiosVistos } from "../services/avisosPrecioService.js";
 import { eliminarComentario } from "../services/opinionesService.js";
@@ -339,6 +340,7 @@ async function marcarVistos(cambios) {
     await marcarCambiosVistos(estado.uid, cambios);
     estado.cambios = estado.cambios.filter((c) => !cambios.includes(c));
     renderizarAvisos();
+    window.dispatchEvent(new CustomEvent(EVENTO_NOTIFICACIONES));
   } catch (error) {
     mostrarAviso(manejarError(error, "Avisos de precio"), "error");
   }

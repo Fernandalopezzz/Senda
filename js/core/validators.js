@@ -145,6 +145,20 @@ export function validarComentario(valor) {
 }
 
 // Presentación del producto: peso o volumen, por ejemplo "1 kg" o "500 ml". Opcional.
+// Código de barras (EAN-13, EAN-8 o UPC): solo números, entre 8 y 14. Es opcional.
+export function normalizarCodigoBarras(valor) {
+  return String(valor ?? "").replace(/[^0-9]/g, "");
+}
+
+export function validarCodigoBarras(valor) {
+  const texto = String(valor ?? "").trim();
+  if (!texto) return "";
+  if (/[^0-9\s-]/.test(texto)) return "El código de barras tiene solo números.";
+  const numeros = normalizarCodigoBarras(texto);
+  if (numeros.length < 8 || numeros.length > 14) return `El código de barras tiene entre 8 y 14 números (tiene ${numeros.length}).`;
+  return "";
+}
+
 export function validarPresentacion(valor) {
   return String(valor ?? "").trim().length > LIMITES.LARGO_PRESENTACION
     ? `La presentación admite hasta ${LIMITES.LARGO_PRESENTACION} caracteres.`

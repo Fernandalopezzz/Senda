@@ -43,6 +43,16 @@ export function textoActualizacion(fecha) {
   return `Actualizado hace ${diferencia} días`;
 }
 
+// Fecha y hora completas de la última actualización de un precio, por ejemplo
+// "Actualizado hoy, 20/11/2026 14:30". Sirve para saber si una oferta puede estar vieja.
+export function textoActualizacionCompleta(fecha) {
+  if (!fecha?.toDate) return "Actualizado recién";
+  const valor = fecha.toDate();
+  const dia = valor.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const hora = valor.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  return `${textoActualizacion(fecha)}, ${dia} ${hora}`;
+}
+
 // Fecha corta de un Timestamp de Firestore, por ejemplo "19 nov. 2026". Sin fecha: "Recién".
 export function textoFecha(fecha) {
   if (!fecha?.toDate) return "Recién";

@@ -11,7 +11,7 @@ import {
   escaparHTML,
   precioHTML,
   precioTexto,
-  textoActualizacion,
+  textoActualizacionCompleta,
   mostrarCargando,
   mostrarError,
   mostrarVacio
@@ -54,9 +54,10 @@ function renderizarProducto(resumen) {
   columnaImagen.className = "detalle__imagen";
   columnaImagen.append(crearImagenProducto(producto.imagen, producto.nombre, "imagen-producto--detalle"));
 
-  const ahorro = disponibles.length >= 2
-    ? disponibles[disponibles.length - 1].precio.precioFinal - mejor.precio.precioFinal
-    : 0;
+  // Ahorro: diferencia entre el comercio más caro y el más barato que tienen stock.
+  const masCaro = disponibles.length >= 2 ? disponibles[disponibles.length - 1] : null;
+  const ahorro = masCaro ? masCaro.precio.precioFinal - mejor.precio.precioFinal : 0;
+  const porcentajeAhorro = ahorro > 0 ? (ahorro / masCaro.precio.precioFinal) * 100 : 0;
 
   const info = document.createElement("div");
   info.className = "detalle__info";
@@ -67,6 +68,7 @@ function renderizarProducto(resumen) {
     ${producto.marca || producto.presentacion
       ? `<p class="detalle__marca">${[producto.marca, producto.presentacion].filter(Boolean).map(escaparHTML).join(" · ")}</p>`
       : ""}
+    ${producto.codigoBarras ? `<p class="detalle__codigo">Código de barras ${escaparHTML(producto.codigoBarras)}</p>` : ""}
     ${producto.descripcion ? `<p class="detalle__descripcion">${escaparHTML(producto.descripcion)}</p>` : ""}
     ${producto.etiquetas?.length
       ? `<ul class="detalle__etiquetas" aria-label="Etiquetas del producto">${producto.etiquetas.map((e) => `<li>${escaparHTML(e)}</li>`).join("")}</ul>`
@@ -87,12 +89,20 @@ function renderizarProducto(resumen) {
             </p>
             ${htmlPrecioPorUnidad(mejor.precio.precioFinal, producto.presentacion, "mejor-precio__unidad")}
             <p class="mejor-precio__vendedor">Vendido por <strong>${escaparHTML(mejor.comercio.nombre)}</strong> · En stock</p>
+            <p class="mejor-precio__fecha">${escaparHTML(textoActualizacionCompleta(mejor.precio.fechaActualizacion))}</p>
             ${htmlNoValidado(mejor.comercio)}
             <a class="btn btn--oscuro btn--chico" href="${rutaPerfilComercio(mejor.comercio.id)}">Ver comercio</a>
           </div>`
         : '<p class="mensaje mensaje--info">Ningún comercio tiene stock de este producto en este momento.</p>'
     }
-    ${ahorro > 0 ? `<p class="detalle__ahorro">Ahorrás hasta <strong>${precioTexto(ahorro)}</strong> eligiendo el comercio más barato.</p>` : ""}`;
+    ${
+      ahorro > 0
+        ? `<p class="franja-ahorro">
+            <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span>Ahorrás <strong>${precioTexto(ahorro)} (${porcentajeAhorro.toLocaleString("es-AR", { maximumFractionDigits: 1 })}%)</strong> comprando en ${escaparHTML(mejor.comercio.nombre)} en lugar de ${escaparHTML(masCaro.comercio.nombre)}.</span>
+          </p>`
+        : ""
+    }`;
 
   info.querySelector(".detalle__titulo").append(crearBotonFavorito(producto, "boton-favorito--en-linea"));
   // Reportar el producto (datos, imagen o producto no apto). Los productos viejos sin creador no se reportan.
@@ -120,22 +130,27 @@ function textoUnidad(precio, presentacion) {
 function renderizarComercios(resumen) {
   const cantidad = resumen.ofertas.length;
   elementos.resumenDonde.textContent = `${cantidad === 1 ? "1 comercio ofrece" : `${cantidad} comercios ofrecen`} este producto. Primero los que tienen stock, de menor a mayor precio.`;
+  // El más barato con stock va destacado. Los demás con stock muestran cuánto más cuestan.
+  const mejorPrecio = resumen.disponibles[0]?.precio.precioFinal ?? null;
   elementos.listaDonde.innerHTML = resumen.ofertas
     .map(({ precio, comercio }, indice) => {
       const datos = [comercio.direccion, comercio.horario].filter((d) => d?.trim()).map(escaparHTML).join(" · ");
       const esMejor = indice === 0 && precio.disponible;
+      const diferencia = precio.disponible && mejorPrecio !== null ? precio.precioFinal - mejorPrecio : 0;
       return `
-        <li class="fila-comercio${precio.disponible ? "" : " fila-comercio--sin-stock"}">
+        <li class="fila-comercio${precio.disponible ? "" : " fila-comercio--sin-stock"}${esMejor ? " fila-comercio--mejor" : ""}">
           ${htmlAvatarComercio(comercio)}
           <div class="fila-comercio__datos">
             <a class="fila-comercio__nombre" href="${rutaPerfilComercio(comercio.id)}">${escaparHTML(comercio.nombre)}</a>
             ${htmlNoValidado(comercio)}
             <p class="fila-comercio__detalle">${datos || "Datos de contacto sin cargar"}</p>
-            <p class="fila-comercio__detalle">${textoActualizacion(precio.fechaActualizacion)}</p>
+            <p class="fila-comercio__detalle fila-comercio__fecha">${escaparHTML(textoActualizacionCompleta(precio.fechaActualizacion))}</p>
           </div>
           <span class="chip ${precio.disponible ? "chip--aprobado" : "chip--rechazado"}">${precio.disponible ? "En stock" : "Sin stock"}</span>
           <span class="fila-comercio__precios">
+            ${esMejor ? '<span class="fila-comercio__etiqueta-mejor">Más barato</span>' : ""}
             <span class="${esMejor ? "pildora-precio" : "fila-comercio__precio"}">${precioTexto(precio.precioFinal)}</span>
+            ${diferencia > 0 ? `<span class="fila-comercio__diferencia" title="Diferencia con el más barato">+ ${precioTexto(diferencia)}</span>` : ""}
             ${textoUnidad(precio.precioFinal, resumen.producto.presentacion)}
             ${precio.enRevision ? '<span class="insignia-revision" title="Recibió varios reportes y el equipo de SENDA lo está revisando">En revisión</span>' : ""}
           </span>

@@ -13,7 +13,8 @@ import {
   validarPrecio,
   validarPorcentaje,
   validarImagen,
-  validarLocalidad
+  validarLocalidad,
+  validarCodigoBarras
 } from "../core/validators.js";
 import { protegerPagina } from "../guards/sessionGuard.js";
 import { listarUsuariosPorRol, cargarComerciosDePrueba } from "../services/usuariosService.js";
@@ -24,6 +25,7 @@ import {
   subirImagenComercio,
   obtenerImagenesComercio,
   existeComercioConNombre,
+  listarComercios,
   obtenerCorreoComercio,
   sincronizarCorreoComercio
 } from "../services/comerciosService.js";
@@ -67,8 +69,8 @@ import {
 } from "../ui/feedback.js";
 import { crearImagenProducto, crearFiltros, filtrarItems } from "../ui/components/tarjetaProducto.js";
 import { rutaPerfilComercio } from "../ui/components/tarjetaComercio.js";
-import { revisarAvisosDelComercio } from "../ui/components/avisosComercio.js";
-import { revisarAvisosDeModeracion } from "../ui/components/reportar.js";
+import { prepararBuscadorProducto, htmlProductoElegido } from "../ui/components/buscadorProducto.js";
+import { montarCampanita } from "../ui/components/campanita.js";
 import { ELIMINAR_CUENTA, accionesPermitidas, aplicarAccionComercio } from "../ui/components/accionesComercio.js";
 import {
   prepararEmpleados,
@@ -122,10 +124,15 @@ const elementos = {
   productoDescripcion: $("producto-descripcion"),
   productoPresentacion: $("producto-presentacion"),
   productoEtiquetas: $("producto-etiquetas"),
+  productoCodigo: $("producto-codigo"),
   productoImagen: $("producto-imagen"),
   vistaImagenProducto: $("vista-imagen-producto"),
   accionesImagenProducto: $("acciones-imagen-producto"),
   bloquePrecioNuevo: $("bloque-precio-nuevo"),
+  bloqueDatosProducto: $("bloque-datos-producto"),
+  buscarProducto: $("buscar-producto"),
+  sugerenciasProducto: $("sugerencias-producto"),
+  productoElegido: $("producto-elegido"),
   nuevoPrecio: $("nuevo-precio-original"),
   nuevoDescuento: $("nuevo-descuento"),
   nuevoDisponible: $("nuevo-disponible"),
@@ -162,6 +169,7 @@ const camposDatosProducto = () => [
   elementos.productoDescripcion,
   elementos.productoPresentacion,
   elementos.productoEtiquetas,
+  elementos.productoCodigo,
   elementos.productoImagen
 ];
 
@@ -281,11 +289,14 @@ async function cargarProductos() {
   // "Agregar producto" necesita el catálogo cargado para ofrecer los productos existentes.
   elementos.botonAgregar.disabled = true;
   try {
-    const [precios, productos] = await Promise.all([
+    const [precios, productos, comercios] = await Promise.all([
       listarPreciosPorComercio(estado.comercioId),
-      listarProductos()
+      listarProductos(),
+      listarComercios().catch(() => [])
     ]);
     estado.productos = new Map(productos.map((producto) => [producto.id, producto]));
+    // Nombre de cada comercio, para mostrar quién cargó cada producto en el buscador.
+    estado.nombresComercios = new Map(comercios.map((comercio) => [comercio.id, comercio.nombre]));
     estado.items = precios
       .filter((precio) => estado.productos.has(precio.productoId))
       .map((precio) => ({ precio, producto: estado.productos.get(precio.productoId) }))
@@ -434,6 +445,7 @@ function completarDatosProducto(producto) {
   elementos.productoDescripcion.value = producto?.descripcion ?? "";
   elementos.productoPresentacion.value = producto?.presentacion ?? "";
   elementos.productoEtiquetas.value = (producto?.etiquetas ?? []).join(", ");
+  elementos.productoCodigo.value = producto?.codigoBarras ?? "";
   elementos.productoImagen.value = "";
   estado.archivoImagen = null;
   estado.imagenActual = producto?.imagen ?? "";
@@ -455,6 +467,8 @@ function prepararModalProducto(modo) {
   elementos.bloqueExistente.hidden = !agregando;
   elementos.bloquePrecioNuevo.hidden = !agregando;
   elementos.avisoCompartido.hidden = agregando;
+  elementos.bloqueDatosProducto.hidden = false;
+  elementos.productoElegido.hidden = true;
   elementos.botonGuardarProducto.textContent = agregando ? "Publicar producto" : "Guardar cambios";
   completarDatosProducto(null);
   bloquearDatosProducto(false);
@@ -463,22 +477,60 @@ function prepararModalProducto(modo) {
 function abrirAgregarProducto() {
   prepararModalProducto("agregar");
   estado.itemActivo = null;
-
-  // Solo se ofrecen los productos que este comercio todavía no publicó.
-  const publicados = new Set(estado.items.map(({ producto }) => producto.id));
-  const disponibles = [...estado.productos.values()]
-    .filter((producto) => !publicados.has(producto.id))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  elementos.productoExistente.innerHTML =
-    '<option value="">Producto nuevo (cargar los datos)</option>' +
-    disponibles
-      .map((p) => `<option value="${escaparHTML(p.id)}">${escaparHTML(p.nombre)}${p.marca ? ` · ${escaparHTML(p.marca)}` : ""}</option>`)
-      .join("");
-
+  reiniciarBuscadorProducto();
   elementos.nuevoDescuento.value = "0";
   elementos.nuevoDisponible.checked = true;
   actualizarVistaPrevia(elementos.nuevoPrecio, elementos.nuevoDescuento, elementos.nuevoPrecioFinal);
   abrirModal(elementos.modalProducto);
+  elementos.buscarProducto.focus();
+}
+
+// ---------- Buscador de "Agregar producto" ----------
+// estado.altaProducto: null (todavía no eligió), "existente" o "nuevo".
+
+function nombreCreador(creadorId) {
+  if (creadorId === estado.comercioId) return "tu comercio";
+  return estado.nombresComercios?.get(creadorId) ?? "otro comercio";
+}
+
+function reiniciarBuscadorProducto() {
+  estado.altaProducto = null;
+  elementos.buscarProducto.value = "";
+  elementos.productoExistente.value = "";
+  elementos.bloqueExistente.hidden = false;
+  elementos.productoElegido.hidden = true;
+  elementos.bloqueDatosProducto.hidden = true;
+  marcarErrorCampo(elementos.buscarProducto, "");
+  completarDatosProducto(null);
+  bloquearDatosProducto(false);
+}
+
+function elegirProductoExistente(producto) {
+  estado.altaProducto = "existente";
+  elementos.productoExistente.value = producto.id;
+  elementos.bloqueExistente.hidden = true;
+  elementos.bloqueDatosProducto.hidden = true;
+  elementos.productoElegido.innerHTML = htmlProductoElegido(producto, nombreCreador(producto.creadorId));
+  elementos.productoElegido.hidden = false;
+  elementos.productoElegido.querySelector("[data-cambiar-producto]").addEventListener("click", () => {
+    reiniciarBuscadorProducto();
+    elementos.buscarProducto.focus();
+  });
+  elementos.nuevoPrecio.focus();
+}
+
+function elegirProductoNuevo(texto) {
+  estado.altaProducto = "nuevo";
+  elementos.productoExistente.value = "";
+  elementos.productoElegido.hidden = true;
+  elementos.bloqueDatosProducto.hidden = false;
+  completarDatosProducto(null);
+  bloquearDatosProducto(false);
+  // Si se escribió un código de barras, va a su campo. Si no, es el nombre.
+  if (/^[0-9\s-]{8,}$/.test(texto)) elementos.productoCodigo.value = texto.replace(/[^0-9]/g, "");
+  else elementos.productoNombre.value = texto;
+  marcarErrorCampo(elementos.buscarProducto, "");
+  elementos.productoNombre.focus();
 }
 
 function abrirEditarProducto(item) {
@@ -489,13 +541,6 @@ function abrirEditarProducto(item) {
   abrirModal(elementos.modalProducto);
 }
 
-function alElegirProductoExistente() {
-  const producto = estado.productos.get(elementos.productoExistente.value);
-  completarDatosProducto(producto);
-  bloquearDatosProducto(Boolean(producto));
-  camposDatosProducto().forEach((campo) => marcarErrorCampo(campo, ""));
-}
-
 function leerDatosProducto() {
   return {
     nombre: elementos.productoNombre.value,
@@ -503,6 +548,7 @@ function leerDatosProducto() {
     descripcion: elementos.productoDescripcion.value,
     presentacion: elementos.productoPresentacion.value,
     etiquetas: elementos.productoEtiquetas.value,
+    codigoBarras: elementos.productoCodigo.value,
     imagen: estado.imagenActual
   };
 }
@@ -514,6 +560,7 @@ function validacionesDatosProducto() {
     [elementos.productoDescripcion, validarTextoOpcional(elementos.productoDescripcion.value, "la descripción", LIMITES.LARGO_TEXTO)],
     [elementos.productoPresentacion, validarPresentacion(elementos.productoPresentacion.value)],
     [elementos.productoEtiquetas, validarEtiquetas(elementos.productoEtiquetas.value)],
+    [elementos.productoCodigo, validarCodigoBarras(elementos.productoCodigo.value)],
     [elementos.productoImagen, validarImagen(estado.archivoImagen)]
   ];
 }
@@ -529,7 +576,12 @@ async function guardarProducto(evento) {
 }
 
 async function publicarProducto() {
-  const existenteId = elementos.productoExistente.value;
+  if (!estado.altaProducto) {
+    marcarErrorCampo(elementos.buscarProducto, "Escribí el producto y elegilo de la lista, o cargalo como producto nuevo.");
+    elementos.buscarProducto.focus();
+    return;
+  }
+  const existenteId = estado.altaProducto === "existente" ? elementos.productoExistente.value : "";
   const validaciones = [
     ...(existenteId ? [] : validacionesDatosProducto()),
     [elementos.nuevoPrecio, validarPrecio(elementos.nuevoPrecio.value)],
@@ -679,7 +731,18 @@ function prepararEventos() {
   });
 
   elementos.botonAgregar.addEventListener("click", abrirAgregarProducto);
-  elementos.productoExistente.addEventListener("change", alElegirProductoExistente);
+  prepararBuscadorProducto(
+    { input: elementos.buscarProducto, lista: elementos.sugerenciasProducto },
+    {
+      obtenerDatos: () => ({
+        productos: [...estado.productos.values()],
+        publicados: new Set(estado.items.map(({ producto }) => producto.id)),
+        nombreCreador
+      }),
+      alElegir: elegirProductoExistente,
+      alCrearNuevo: elegirProductoNuevo
+    }
+  );
   elementos.productoImagen.addEventListener("change", alElegirImagenProducto);
   elementos.archivoFoto.addEventListener("change", () => cambiarImagenComercio("foto", elementos.archivoFoto, elementos.botonFoto));
   elementos.archivoFondo.addEventListener("change", () => cambiarImagenComercio("fondo", elementos.archivoFondo, elementos.botonFondo));
@@ -959,8 +1022,7 @@ async function iniciarPanelComercio() {
   prepararEventos();
   elementos.cargaPagina.hidden = true;
   // Si el administrador eliminó algún producto, el aviso aparece al entrar al panel.
-  revisarAvisosDelComercio(estado.comercioId);
-  revisarAvisosDeModeracion(estado.comercioId);
+  montarCampanita(document.querySelector(".encabezado__acciones"), { uid: estado.comercioId, esComercio: true });
   await Promise.all([cargarPerfil(), cargarProductos()]);
 }
 

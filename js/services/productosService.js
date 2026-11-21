@@ -12,7 +12,7 @@ import {
 import { db } from "../config/firebase.js";
 import { COLECCIONES, ALMACENAMIENTO, LIMITES } from "../core/constants.js";
 import { prepararImagen } from "./imagenesService.js";
-import { normalizarEtiquetas } from "../core/validators.js";
+import { normalizarEtiquetas, normalizarCodigoBarras, normalizarTexto } from "../core/validators.js";
 import { leerFavoritosDeCuenta, guardarFavoritosDeCuenta } from "./clientesService.js";
 import { manejarError } from "../core/errores.js";
 
@@ -38,15 +38,30 @@ export function actualizarProducto(productoId, datos) {
 
 // Limpia los textos antes de guardar. También la usa preciosService al crear producto y precio juntos.
 // presentacion: peso o volumen ("1 kg"). etiquetas: lista corta de características ("Natural").
-export function normalizarProducto({ nombre, marca, descripcion, imagen, presentacion = "", etiquetas = [] }) {
+// codigoBarras: el número que está debajo de las barras del envase. Sirve para buscar el producto
+// escribiendo o pegando ese número. Es opcional y se guarda solo con números.
+export function normalizarProducto({ nombre, marca, descripcion, imagen, presentacion = "", etiquetas = [], codigoBarras = "" }) {
   return {
     nombre: nombre.trim(),
     marca: marca.trim(),
     descripcion: descripcion.trim(),
     imagen: imagen.trim(),
     presentacion: String(presentacion).trim(),
-    etiquetas: normalizarEtiquetas(etiquetas)
+    etiquetas: normalizarEtiquetas(etiquetas),
+    codigoBarras: normalizarCodigoBarras(codigoBarras)
   };
+}
+
+// true si el producto coincide con lo que se escribió. No distingue tildes ni mayúsculas y
+// acepta las palabras en cualquier orden ("canarias yerba"). Si se escriben solo números
+// (desde 4), también busca por código de barras.
+export function productoCoincide(producto, texto) {
+  const termino = normalizarTexto(texto);
+  if (!termino) return true;
+  const numeros = normalizarCodigoBarras(texto);
+  if (numeros.length >= 4 && numeros === termino.replace(/\s/g, "") && (producto.codigoBarras ?? "").includes(numeros)) return true;
+  const donde = normalizarTexto(`${producto.nombre} ${producto.marca ?? ""} ${producto.presentacion ?? ""}`);
+  return termino.split(/\s+/).every((palabra) => donde.includes(palabra));
 }
 
 // Achica la imagen y devuelve el data URL que se guarda en productos.imagen.

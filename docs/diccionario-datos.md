@@ -58,6 +58,7 @@ Catálogo compartido. Un mismo producto lo venden varios comercios, cada uno con
 | imagen | string | Imagen del producto como JPG en formato data URL. Puede quedar vacía. |
 | presentacion | string | Peso o volumen, por ejemplo "1 kg" o "500 ml". Opcional, hasta 30 caracteres. |
 | etiquetas | array | Características cortas, por ejemplo "Natural" o "Sabor intenso". Opcional, hasta 6 de 24 caracteres. |
+| codigoBarras | string | Código de barras del envase, solo números (8 a 14). Opcional. Permite buscar el producto por ese número. |
 | creadorId | string | `uid` del comercio que cargó el producto. Es el único que puede editar nombre, marca, descripción e imagen. No se puede cambiar. |
 
 ## precios

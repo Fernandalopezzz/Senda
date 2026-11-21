@@ -9,7 +9,7 @@ import { validarBusqueda, normalizarTexto } from "../core/validators.js";
 import { manejarError } from "../core/errores.js";
 import { verificarConfiguracion } from "../services/authService.js";
 import { cargarCatalogo } from "../services/preciosService.js";
-import { obtenerFavoritos, EVENTO_FAVORITOS } from "../services/productosService.js";
+import { obtenerFavoritos, EVENTO_FAVORITOS, productoCoincide } from "../services/productosService.js";
 import { prepararBarraPublica } from "../guards/sessionGuard.js";
 import { registrarBusqueda } from "../services/historialService.js";
 import { mostrarCargando, mostrarError, mostrarVacio, prepararBuscador } from "../ui/feedback.js";
@@ -73,9 +73,8 @@ function calcularResultados({ q, vista }) {
 
   if (termino) {
     listaComercios = comercios.filter(({ comercio }) => coincide(comercio.nombre, termino));
-    listaProductos = listaProductos.filter(({ producto }) =>
-      coincide(`${producto.nombre} ${producto.marca ?? ""}`, termino)
-    );
+    // Busca por nombre, marca y presentación, o por código de barras si se escriben números.
+    listaProductos = listaProductos.filter(({ producto }) => productoCoincide(producto, q));
   }
   if (vista === "favoritos") {
     const favoritos = obtenerFavoritos();

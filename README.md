@@ -71,7 +71,7 @@ Las páginas ocupan todo el ancho de la pantalla, con seis productos por fila. D
 
 ### Buscar un producto
 
-El buscador está arriba de todo en el inicio. Se escribe el nombre de un producto, una marca o el nombre de un comercio y se presiona **Buscar**. La búsqueda no distingue mayúsculas ni tildes, por eso "almacen" encuentra "Almacén". Hace falta escribir al menos dos letras.
+El buscador está arriba de todo en el inicio. Se escribe el nombre de un producto, una marca, el nombre de un comercio o el **código de barras** del envase y se presiona **Buscar**. La búsqueda no distingue mayúsculas ni tildes, por eso "cafe" encuentra "Café" y "almacen" encuentra "Almacén". Las palabras pueden ir en cualquier orden, por ejemplo "canarias yerba". Hace falta escribir al menos dos letras, o al menos cuatro números para buscar por código.
 
 Debajo del buscador aparecen dos secciones.
 
@@ -86,9 +86,15 @@ Los resultados se pueden ordenar por menor precio, mayor precio, mayor descuento
 
 ### Comparar precios de un producto
 
-Al entrar a un producto se abre su detalle. Ahí figuran la imagen, la marca, la descripción y el **mejor precio** entre los comercios que tienen stock. Si hay dos o más comercios con stock, también se informa cuánto se ahorra al elegir el más barato.
+Al entrar a un producto se abre su detalle. Ahí figuran la imagen, la marca, la descripción, el código de barras si el comercio lo cargó y el **mejor precio** entre los comercios que tienen stock, con la fecha y la hora en que se actualizó. Si hay dos o más comercios con stock, una franja verde indica cuánto se ahorra, en pesos y en porcentaje, por ejemplo "Ahorrás $ 590 (14,1%)".
 
-Más abajo está la lista de todos los comercios que venden ese producto. Primero aparecen los que tienen stock, de menor a mayor precio, y después los que no tienen. Cada fila indica la dirección, el horario y la fecha de la última actualización del precio. Al final de la página se sugieren productos similares.
+Más abajo está la lista de todos los comercios que venden ese producto. Primero aparecen los que tienen stock, de menor a mayor precio, y después los que no tienen.
+
+- El más barato aparece destacado en verde, con la etiqueta **Más barato**.
+- Cada comercio más caro muestra cuánto más cuesta, por ejemplo **+ $ 190**.
+- Cada fila indica la dirección, el horario y la fecha y la hora de la última actualización del precio. Sirve para saber si una oferta puede estar vieja antes de ir al local.
+
+Al final de la página se sugieren productos similares.
 
 ### Consultar el perfil de un comercio
 
@@ -141,7 +147,17 @@ La cuenta se abre tocando la foto o el @usuario de la barra superior. **Cerrar s
 | Mis favoritos | Lista privada de los productos guardados con el corazón, con un buscador. Arriba aparecen los cambios de precio: si un favorito bajó, subió, tiene descuento o se quedó sin stock. **Entendido** marca cada aviso como visto. |
 | Configuración | **Avisos de precio** se encienden o se apagan. **Modo oscuro** cambia los fondos blancos por grises oscuros en todo el sitio. **Idioma** muestra los idiomas disponibles, por ahora solo español. En **Cuenta** se cambian el correo y la contraseña, y se elimina la cuenta. |
 
-Cuando un favorito cambió de precio, el inicio muestra el recuadro **Novedades de tus favoritos** y la foto de la barra un número rojo. El control se hace cada vez que se abre SENDA con la sesión iniciada.
+Cuando un favorito cambió de precio, el inicio muestra el recuadro **Novedades de tus favoritos**. El control se hace cada vez que se abre SENDA con la sesión iniciada.
+
+### La campanita de notificaciones
+
+Con la sesión iniciada, la barra superior tiene una **campanita**. Reúne los avisos de la cuenta.
+
+- Con cuenta personal, los cambios de precio de los favoritos (bajó, subió, se quedó sin stock o volvió a haber stock).
+- Con cuenta de comercio, los productos que SENDA eliminó de su catálogo.
+- En las dos, los avisos del equipo de SENDA sobre el contenido propio (en revisión, advertencia, oculto o aprobado).
+
+Al abrir SENDA, si hay novedades, aparece un aviso al costado derecho durante unos segundos, sin tapar la página. Después el aviso se guarda en la campanita, que muestra el número de notificaciones sin leer. Al tocarla se abre la lista. Cada aviso de precio lleva al producto, y el tilde de cada aviso lo marca como leído.
 
 ### Reportar, ocultar comercios y bloquear cuentas
 
@@ -187,14 +203,15 @@ El botón **Ver perfil público** muestra el perfil tal como lo ven los clientes
 ### Publicar un producto
 
 1. Presionar **Agregar producto** en la sección "Mis productos".
-2. Elegir un producto que ya existe en SENDA o la opción **Producto nuevo**.
-3. Si el producto es nuevo, cargar el nombre, la marca, la presentación (por ejemplo "1 kg" o "500 ml"), las etiquetas separadas por coma (por ejemplo "Natural, Sabor intenso"), una descripción breve y una imagen.
-4. Cargar el precio, el porcentaje de descuento (de 0 a 99) y si hay stock.
-5. Presionar **Publicar producto**.
+2. Escribir el nombre, la marca o el código de barras en **¿Qué producto vas a publicar?**. Mientras se escribe, abajo aparecen los productos de SENDA que se parecen, con su imagen y el comercio que los cargó.
+3. Si el producto está en la lista, elegirlo. Sus datos se completan solos y solo falta el precio.
+4. Si no está, elegir la última opción, **Cargar "…" como producto nuevo**. El nombre escrito ya queda cargado. Completar la marca, la presentación (por ejemplo "1 kg" o "500 ml"), el código de barras (opcional), las etiquetas separadas por coma, una descripción breve y una imagen.
+5. Cargar el precio, el porcentaje de descuento (de 0 a 99) y si hay stock.
+6. Presionar **Publicar producto**.
 
-El formulario muestra el precio final con el descuento aplicado antes de publicar.
+El formulario muestra el precio final con el descuento aplicado antes de publicar. Con las flechas del teclado y **Enter** también se elige un producto de la lista.
 
-Elegir un producto existente es la forma recomendada cuando otro comercio ya lo cargó. Así el producto aparece una sola vez en la búsqueda y los clientes pueden comparar los precios de todos los comercios que lo venden. El comercio que lo cargó primero sigue siendo el único que puede cambiar sus datos.
+Un producto nuevo queda en la lista para los demás comercios. Si otro comercio lo busca después, le aparece con la imagen y los datos ya cargados, y solo pone su precio. Así el producto aparece una sola vez en la búsqueda y los clientes comparan los precios de todos los comercios que lo venden. El comercio que lo cargó primero sigue siendo el único que puede cambiar sus datos. Los productos que el comercio ya publica aparecen en gris con la leyenda "Ya lo publicás".
 
 ### Modificar un producto, su precio o su stock
 
@@ -208,7 +225,7 @@ Los comercios no eliminan productos publicados. Para retirar uno de la venta, se
 
 ### Aviso de producto eliminado por SENDA
 
-Si la administración elimina un producto por no ser apto para la venta, la próxima vez que el comercio abre SENDA con su sesión iniciada aparece un aviso con el nombre del producto. El aviso indica que el producto ha sido eliminado por SENDA y que, si se considera un error, hay que comunicarse con soporte técnico. Al presionar **Entendido**, el aviso no vuelve a aparecer.
+Si la administración elimina un producto por no ser apto para la venta, la próxima vez que el comercio abre SENDA con su sesión iniciada aparece un aviso al costado, que después queda en la campanita. El aviso indica el nombre del producto y que, si se considera un error, hay que comunicarse con soporte técnico. Al marcarlo como leído, no vuelve a aparecer.
 
 La lista tiene filtros por nombre, por ofertas, por productos sin stock y por rango de precio.
 

@@ -12,8 +12,7 @@ import { ROLES, ROLES_COMERCIO_ACTIVO, ROLES_EQUIPO, RUTAS } from "../core/const
 import { obtenerEmpleado } from "../services/empleadosService.js";
 import { ErrorSenda, manejarError } from "../core/errores.js";
 import { iniciales, mostrarAviso } from "../ui/feedback.js";
-import { revisarAvisosDelComercio } from "../ui/components/avisosComercio.js";
-import { revisarAvisosDeModeracion } from "../ui/components/reportar.js";
+import { montarCampanita } from "../ui/components/campanita.js";
 
 // El equipo (administrador y empleados) y el comercio usan la misma pantalla de gestión;
 // el contenido cambia según el rol.
@@ -131,10 +130,11 @@ export function prepararBarraPublica(contenedor, { activo = null, revisarPrecios
     sesion.hidden = !cuenta;
     if (cuenta) mostrarCuenta(sesion, cuenta);
     guardarCuentaDeLaBarra(cuenta);
-    // Si el administrador eliminó algún producto del comercio, se le avisa al abrir SENDA.
-    if (cuenta?.esComercio) revisarAvisosDelComercio(usuario.uid);
-    // Avisos del equipo de SENDA sobre su contenido: en revisión, advertencias u ocultos.
-    if (cuenta?.esComercio || cuenta?.esCliente) revisarAvisosDeModeracion(usuario.uid);
+    // Campanita con los avisos de precio, los productos eliminados por SENDA y los avisos de
+    // moderación. Al abrir SENDA, las novedades aparecen unos segundos al costado y quedan guardadas ahí.
+    if (cuenta?.esComercio || cuenta?.esCliente) {
+      montarCampanita(sesion, { uid: usuario.uid, esCliente: Boolean(cuenta.esCliente), esComercio: Boolean(cuenta.esComercio) });
+    }
     // Con cuenta personal, los favoritos se toman de la cuenta.
     if (cuenta?.esCliente) {
       vincularFavoritosConCuenta(usuario.uid)
@@ -144,42 +144,12 @@ export function prepararBarraPublica(contenedor, { activo = null, revisarPrecios
   });
 }
 
-// Muestra en la barra cuántos favoritos cambiaron de precio. El aviso flotante aparece
-// una sola vez por visita (sessionStorage) para no repetirse en cada página.
-// Si la persona apagó los avisos en Configuración, no se muestra nada.
+// Con cuenta personal, el inicio muestra los cambios de precio en su propio recuadro.
+// Los avisos de la barra los muestra la campanita (campanita.js).
 async function avisarCambiosDePrecio(sesion, uid, alCambiarPrecios) {
+  if (!alCambiarPrecios) return;
   const { cambios, avisosActivos } = await revisarCambiosDePrecio(uid);
-  const enlace = sesion.querySelector("[data-enlace-panel]");
-  enlace.querySelector(".cuenta-sesion__aviso")?.remove();
-  if (!avisosActivos || cambios.length === 0) return;
-
-  // El enlace de la cuenta lleva directo a "Mis favoritos", donde están los avisos.
-  enlace.href = `${RUTAS.PERFIL_USUARIO}#favoritos`;
-  const globo = document.createElement("span");
-  globo.className = "cuenta-sesion__aviso";
-  globo.textContent = cambios.length;
-  globo.title = "Favoritos con cambio de precio";
-  enlace.append(globo);
-  enlace.setAttribute(
-    "aria-label",
-    `${enlace.getAttribute("aria-label")}. ${cambios.length} favoritos cambiaron de precio`
-  );
-
-  if (alCambiarPrecios) {
-    alCambiarPrecios(cambios);
-    return;
-  }
-  try {
-    if (sessionStorage.getItem("senda:aviso-precios") === "si") return;
-    sessionStorage.setItem("senda:aviso-precios", "si");
-  } catch {
-    // Sin sessionStorage el aviso aparece en cada página.
-  }
-  mostrarAviso(
-    cambios.length === 1
-      ? "Un producto de tus favoritos cambió de precio. Miralo en tu perfil."
-      : `${cambios.length} productos de tus favoritos cambiaron de precio. Miralos en tu perfil.`
-  );
+  if (avisosActivos && cambios.length > 0) alCambiarPrecios(cambios);
 }
 
 function leerCuentaDeLaBarra() {

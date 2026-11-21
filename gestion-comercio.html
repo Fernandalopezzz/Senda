@@ -298,12 +298,19 @@
 
       <p id="aviso-producto-compartido" class="mensaje mensaje--info" hidden>Este producto lo cargó tu comercio. Si otros comercios también lo venden, los cambios en el nombre, la marca, la descripción o la imagen se ven en sus publicaciones.</p>
 
-      <div class="campo" id="bloque-existente">
-        <label class="campo__etiqueta" for="producto-existente">Producto</label>
-        <select class="campo__control" id="producto-existente"></select>
-        <p class="campo__ayuda">Si el producto ya está en SENDA, elegilo para que se compare con otros comercios.</p>
+      <!-- Buscador de productos: se escribe y abajo aparecen los parecidos que ya están en SENDA -->
+      <div class="campo buscador-producto" id="bloque-existente">
+        <label class="campo__etiqueta" for="buscar-producto">¿Qué producto vas a publicar?</label>
+        <input class="campo__control" id="buscar-producto" type="search" autocomplete="off" maxlength="120"
+          placeholder="Escribí el nombre, la marca o el código de barras" aria-controls="sugerencias-producto" aria-autocomplete="list">
+        <input type="hidden" id="producto-existente">
+        <ul class="buscador-producto__lista" id="sugerencias-producto" role="listbox" hidden></ul>
+        <p class="campo__ayuda" id="ayuda-buscar-producto">Si ya lo publicó otro comercio, elegilo y sus datos se completan solos. Si no aparece, se carga como producto nuevo.</p>
         <p class="campo__error"></p>
       </div>
+
+      <!-- Producto elegido de la lista: datos cargados por el comercio que lo creó -->
+      <div class="producto-elegido" id="producto-elegido" hidden></div>
 
       <div class="grilla-campos" id="bloque-datos-producto">
         <div class="campo campo--ancho">
@@ -319,6 +326,12 @@
         <div class="campo">
           <label class="campo__etiqueta" for="producto-presentacion">Presentación (opcional)</label>
           <input class="campo__control" id="producto-presentacion" type="text" maxlength="30" placeholder="Ej.: 1 kg, 500 g, 900 ml">
+          <p class="campo__error"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="producto-codigo">Código de barras (opcional)</label>
+          <input class="campo__control" id="producto-codigo" type="text" maxlength="20" inputmode="numeric" placeholder="Ej.: 7790387000017">
+          <p class="campo__ayuda">Los números que están debajo de las barras del envase.</p>
           <p class="campo__error"></p>
         </div>
         <div class="campo">
