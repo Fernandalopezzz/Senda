@@ -47,6 +47,11 @@ const MENSAJES_ERROR = {
   "senda/nombre-repetido": "Ya hay un comercio registrado con ese nombre.",
   "senda/producto-repetido": "Ese producto ya está publicado en tu comercio.",
   "senda/sin-datos-prueba": "Esta copia del proyecto no tiene el archivo de datos de prueba (js/core/datosPrueba.js).",
+  "senda/bloqueado": "Esta cuenta está bloqueada por no cumplir las normas de SENDA. Comunicate con soporte técnico.",
+  "senda/en-lista-bloqueo": "Este correo o teléfono pertenece a una cuenta eliminada por no cumplir las normas. La cuenta quedó bloqueada. Comunicate con soporte técnico.",
+  "senda/ya-reportado": "Ya reportaste esto. El equipo de SENDA lo va a revisar.",
+  "senda/empleado-deshabilitado": "Esta cuenta está deshabilitada. Comunicate con soporte técnico para volver a usarla.",
+  "senda/correo-en-uso": "Ese correo ya tiene una cuenta en SENDA. Usá otro correo para el empleado.",
   "senda/sin-conexion": "No se pudo conectar con la base de datos. Revisá tu conexión a internet y recargá la página."
 };
 

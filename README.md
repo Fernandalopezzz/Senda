@@ -45,8 +45,9 @@ Hace falta un servidor local porque los navegadores no cargan módulos de JavaSc
 |---|---|---|
 | Cliente (visitante) | No | Buscar productos, comparar precios, ver ofertas, guardar favoritos en el navegador y consultar los datos de cada comercio. |
 | Cliente con cuenta personal | Opcional, sin validación | Lo mismo que el visitante, más favoritos en cualquier computadora, avisos de cambio de precio, "me gusta", "no me gusta" y comentarios. |
-| Comercio | Sí, validada por la administración | Editar el perfil del local, publicar productos, cargar precios y descuentos y marcar el stock. |
-| Administración | Sí, asignada por el equipo de SENDA | Aceptar o rechazar las solicitudes de comercios nuevos, ver el perfil de cualquier comercio y eliminar productos no aptos para la venta. |
+| Comercio | Sí, validada por la administración | Editar el perfil del local, publicar productos, cargar precios y descuentos, marcar el stock y reportar contenido. |
+| Empleado | Sí, creada por la administración | Las tareas que la administración le habilita. Ver pendientes, validar, bloquear comercios y revisar reportes. No elimina cuentas. |
+| Administración | Sí, asignada por el equipo de SENDA | Todo lo del empleado, más eliminar cuentas, crear y deshabilitar empleados, bloquear cuentas y ver el historial de moderación. |
 
 ---
 
@@ -64,6 +65,9 @@ El inicio está ordenado de arriba hacia abajo.
 4. **Para vos**, con la mejor oferta de lo que se buscó o se miró hace poco. Por ejemplo, después de mirar una yerba cara, sugiere la yerba con más descuento. El menú de tres puntos permite borrar ese historial, que se guarda solo en el navegador.
 5. **Compará precios**, con un producto de ejemplo y su precio en varios comercios.
 6. **Ofertas y descuentos**.
+7. **Comercios de tu zona**, con cada comercio de la localidad elegida, su logo, su nombre y sus productos. El selector **Localidad** cambia la ciudad. Sin cuenta, la elección queda guardada en el navegador. Con cuenta, se usa la localidad de la cuenta. Primero aparecen los comercios que actualizaron precios ese día.
+
+Las páginas ocupan todo el ancho de la pantalla, con seis productos por fila. Debajo de cada precio figura el **precio por kilo o por litro**, calculado con la presentación del producto, para comparar envases de distinto tamaño. Los comercios que cambiaron algún precio o stock en el día llevan la insignia **Actualizado hoy**.
 
 ### Buscar un producto
 
@@ -112,7 +116,7 @@ La cuenta personal es para clientes que quieren seguir sus productos de cerca. N
 
 1. Presionar **Registrarse** en la barra superior.
 2. Elegir **Cuenta personal**. La otra opción, **Cuenta de comercio**, es para locales que publican precios.
-3. Completar el nombre, un nombre de usuario, el correo y una contraseña de al menos 8 caracteres con letras y números. También se puede usar **Google**, completando solo el nombre y el nombre de usuario.
+3. Completar el nombre, un nombre de usuario, la localidad (de una lista de localidades de Santa Cruz), el correo y una contraseña de al menos 8 caracteres con letras y números. También se puede usar **Google**, completando solo el nombre y el nombre de usuario.
 4. Aceptar los términos y presionar **Crear cuenta**.
 
 La cuenta queda lista al instante, sin validación. El nombre de usuario es el que ven los demás junto a los comentarios y no se puede cambiar después. El correo es privado y solo lo ve su dueño.
@@ -139,6 +143,14 @@ La cuenta se abre tocando la foto o el @usuario de la barra superior. **Cerrar s
 
 Cuando un favorito cambió de precio, el inicio muestra el recuadro **Novedades de tus favoritos** y la foto de la barra un número rojo. El control se hace cada vez que se abre SENDA con la sesión iniciada.
 
+### Reportar, ocultar comercios y bloquear cuentas
+
+Cada comentario, cada producto, cada precio de la lista "Dónde comprar" y cada perfil tienen el botón **Reportar** (una bandera). Al tocarlo se elige el motivo. Los motivos son contenido ofensivo, spam o publicidad, precio falso, producto no apto para la venta, precio que no coincide con el del local u otro motivo, según lo que se reporta. Cada cuenta reporta una sola vez lo mismo y nadie reporta lo propio. Reportan las cuentas personales y los comercios.
+
+Cuando algo junta **3 reportes de personas distintas**, sigue visible con la etiqueta **En revisión** y el dueño recibe un aviso con los motivos la próxima vez que abre SENDA. Si un comentario o un producto tiene palabras ofensivas o es un producto no apto, queda oculto en el momento y entra con prioridad a la revisión del equipo, aunque nadie lo haya reportado.
+
+En el perfil de un comercio, **Ocultar de mis comparaciones** saca sus precios del inicio, de los resultados y del detalle de cada producto. En el detalle aparece un aviso que recuerda qué comercios se ocultaron. En el perfil público de otra cuenta personal, **Bloquear** hace que sus comentarios dejen de verse. Las dos cosas se deshacen desde **Configuración**, en "Comercios ocultos y cuentas bloqueadas".
+
 ### Cambiar datos o eliminar la cuenta
 
 Cada cambio pide la contraseña actual. El cambio de correo envía un enlace al correo nuevo y se aplica al abrirlo. Eliminar la cuenta borra el perfil, los favoritos, las reacciones y los comentarios, y no se puede deshacer. Si la cuenta entra con Google, el correo y la contraseña se administran desde Google, y para eliminarla se confirma con la ventana de Google.
@@ -150,7 +162,7 @@ Cada cambio pide la contraseña actual. El cambio de correo envía un enlace al 
 ### Registrar el comercio
 
 1. Entrar a **Registrarse**, en la barra superior.
-2. Completar el nombre del comercio, el nombre del dueño o responsable, la dirección y un teléfono de contacto.
+2. Completar el nombre del comercio, el nombre del dueño o responsable, la dirección, la localidad y un teléfono de contacto.
 3. Elegir una de dos formas de crear la cuenta. Con correo y contraseña, la contraseña necesita al menos 8 caracteres, con letras y números. Con **Google**, se usa la cuenta de Google y no hace falta completar correo ni contraseña.
 4. Aceptar los términos y presionar **Crear cuenta**.
 
@@ -166,7 +178,7 @@ Si se olvidó la contraseña, el enlace **¿Olvidaste tu contraseña?** permite 
 
 ### Editar el perfil del comercio
 
-En la parte superior del panel se modifican el nombre, el teléfono, la dirección y el horario de atención. Los cambios se guardan con el botón **Guardar cambios**.
+En la parte superior del panel se modifican el nombre, el teléfono, la dirección, la localidad y el horario de atención. Los cambios se guardan con el botón **Guardar cambios**.
 
 También se pueden cambiar la **foto** del comercio y la **imagen de fondo** del perfil. Se aceptan imágenes JPG, PNG o WEBP de hasta 5 MB. SENDA achica la imagen automáticamente antes de guardarla.
 
@@ -206,9 +218,9 @@ El botón **Cerrar sesión** está arriba a la derecha del panel.
 
 ---
 
-## Uso para la administración
+## Uso para la administración y los empleados
 
-La cuenta de administración entra al mismo panel de gestión, pero ve la pantalla **Validación de comercios**.
+La cuenta de administración y las cuentas de empleado entran al mismo panel de gestión. La barra superior tiene las secciones **Comercios**, **Revisión**, **Empleados** e **Historial**. Un empleado ve solo **Comercios** y, si tiene el permiso, **Revisión**. En cada sección ve solo los botones de las tareas que tiene habilitadas.
 
 ### Aceptar, rechazar, bloquear y habilitar comercios
 
@@ -220,11 +232,13 @@ Las cuentas de comercio se dividen en tres pestañas, cada una con su cantidad. 
 | Validados | Comercios habilitados. Pueden ingresar y sus precios se muestran en el sitio. | Ojo y tachito (bloquear). |
 | Bloqueados | Comercios rechazados o bloqueados. No pueden ingresar y sus precios no se muestran. | Ojo, tilde (volver a habilitar) y tachito (eliminar la cuenta). |
 
-El ojo abre el perfil del comercio en otra pestaña. El tachito pide confirmación antes de rechazar, bloquear o eliminar. Al usar un ícono, el comercio pasa a la pestaña que corresponde.
+El ojo abre el perfil del comercio en otra pestaña. El tachito pide confirmación y un motivo antes de rechazar, bloquear o eliminar. Al usar un ícono, el comercio pasa a la pestaña que corresponde y la acción queda en el historial.
 
 ### Eliminar una cuenta de comercio
 
-Solo se puede eliminar una cuenta que ya está bloqueada. Primero se bloquea y después, en la pestaña **Bloqueados**, el tachito la elimina. Se borran el perfil del comercio, su correo guardado, todos sus precios y los productos que solo vendía ese comercio. Los productos que también venden otros comercios siguen publicados en ellos. La eliminación no se puede deshacer.
+Solo la administración elimina cuentas, y solo las que ya están bloqueadas. Primero se bloquea y después, en la pestaña **Bloqueados**, el tachito la elimina. Se borran el perfil del comercio, su correo guardado, todos sus precios y los productos que solo vendía ese comercio. Los productos que también venden otros comercios siguen publicados en ellos. La eliminación no se puede deshacer.
+
+El correo y el teléfono de la cuenta eliminada quedan en una **lista de bloqueo permanente**. Si alguien se registra de nuevo con ese correo o ese teléfono, la cuenta nace bloqueada y no puede ingresar. El nombre del comercio sí se puede volver a usar.
 
 La cuenta eliminada ya no puede entrar a SENDA. Su usuario de acceso queda registrado en Firebase Authentication, porque la página no tiene permiso para borrarlo. Si hace falta liberar ese correo, se borra a mano desde la consola de Firebase, en **Authentication → Users**.
 
@@ -232,9 +246,39 @@ La cuenta eliminada ya no puede entrar a SENDA. Su usuario de acceso queda regis
 
 El ojo de cada renglón abre el perfil del comercio, en cualquiera de los tres estados. Con la sesión de administración, el perfil muestra un recuadro con el estado de la cuenta y un botón **Eliminar producto** en cada producto.
 
-El mismo recuadro tiene botones para cambiar el estado sin volver al panel. Si la cuenta está pendiente, aparecen **Aceptar cuenta** y **Rechazar cuenta**. Si está validada, aparece **Bloquear cuenta**. Si está bloqueada, aparecen **Volver a habilitar cuenta** y **Eliminar cuenta**. Después de eliminar una cuenta, la página vuelve al panel de administración.
+El mismo recuadro tiene botones para cambiar el estado sin volver al panel. Si la cuenta está pendiente, aparecen **Aceptar cuenta** y **Rechazar cuenta**. Si está validada, aparece **Bloquear cuenta**. Si está bloqueada, aparecen **Volver a habilitar cuenta** y **Eliminar cuenta**. Después de eliminar una cuenta, la página vuelve al panel de administración. Un empleado ve el mismo recuadro, pero solo con los botones de sus permisos y sin **Eliminar producto** ni **Eliminar cuenta**.
 
 Desde esta vista no se puede editar ningún dato del comercio. El botón **Eliminar producto** sirve para retirar publicaciones que no son aptas para la venta. Al confirmar, el producto deja de mostrarse en ese comercio y el comercio recibe el aviso de eliminación. Si ningún otro comercio vendía ese producto, el producto se borra de SENDA. Si otros comercios lo venden, sigue publicado en ellos.
+
+### Empleados
+
+En **Empleados**, el botón **Agregar empleado** pide el nombre, el correo, una contraseña inicial y los permisos. El empleado puede cambiar la contraseña desde su panel, con **Cambiar contraseña**. La tabla muestra el nombre, el correo, los permisos y la fecha de alta de cada empleado.
+
+| Permiso | Qué habilita |
+|---|---|
+| Ver pendientes | Ver las solicitudes de comercios nuevos. |
+| Validar | Aceptar comercios pendientes y volver a habilitar bloqueados. |
+| Bloquear | Rechazar solicitudes y bloquear comercios validados. |
+| Revisar reportes | Atender la lista de revisión. |
+
+Las casillas se guardan al marcarlas. La **X** deshabilita la cuenta después de una confirmación. Un empleado deshabilitado pierde todos sus permisos, su fila pasa al final de la tabla en gris y, si ingresa, solo ve el aviso "Esta cuenta está deshabilitada" con el botón para cerrar sesión. **Volver a habilitar** devuelve el acceso sin permisos. Los empleados no se borran, para que el historial siga mostrando quién hizo cada acción.
+
+### Revisión de reportes
+
+La sección **Revisión** muestra lo que tiene 3 reportes o fue marcado por palabras no permitidas. Primero aparece lo marcado con prioridad y después lo que tiene más reportes. Cada tarjeta indica qué es, los motivos, cuántos reportes tiene y si está oculto o visible. **Ver lo que escribió cada persona** muestra el detalle de cada reporte y **Ver** abre el contenido.
+
+| Decisión | Qué pasa |
+|---|---|
+| Aprobar | Se quita la etiqueta "En revisión" y el contenido vuelve a verse si estaba oculto. |
+| Advertir | El contenido sigue visible y el dueño recibe una advertencia con el motivo. |
+| Ocultar o Borrar | Un comentario se borra. Un producto, un precio o una cuenta dejan de mostrarse. |
+| Bloquear la cuenta | El empleado lo pide y el pedido le llega a la administración, que lo ve primero en la lista y decide si bloquea la cuenta. |
+
+Cada decisión pide un motivo, se le avisa al dueño y queda en el historial.
+
+### Historial de moderación
+
+Solo la administración ve el **Historial**. Cada fila indica la fecha y la hora, quién hizo la acción (nombre y correo), la acción, sobre qué cuenta o contenido, el motivo y desde dónde se hizo (panel de validación, perfil del comercio, lista de revisión o sección Empleados). El selector **Mostrar acciones de** filtra por persona. Las acciones no se pueden editar ni borrar.
 
 ### Cargar datos de prueba
 
@@ -255,6 +299,12 @@ Sin cuenta, se guardan solo en el navegador. Borrar los datos de navegación o c
 
 **No aparece la opción de comentar.**
 Los comentarios y las reacciones son solo para cuentas personales. Con una cuenta de comercio o sin sesión, las opiniones se pueden leer pero no escribir.
+
+**Un comentario o un producto quedó "oculto y en revisión" al publicarlo.**
+Tiene palabras no permitidas o es un producto no apto para la venta. El equipo de SENDA lo revisa y, si está bien, lo aprueba.
+
+**La cuenta nueva aparece bloqueada al registrarse.**
+El correo o el teléfono pertenecen a una cuenta que la administración eliminó por no cumplir las normas. Hay que comunicarse con soporte técnico.
 
 **La imagen no se pudo guardar.**
 La imagen tiene que ser JPG, PNG o WEBP y pesar menos de 5 MB. Si tiene demasiado detalle, conviene recortarla o usar otra.

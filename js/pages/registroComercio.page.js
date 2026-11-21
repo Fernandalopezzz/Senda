@@ -3,13 +3,14 @@
 // La cuenta queda "pendiente" hasta que un administrador revisa los datos y la valida o la bloquea.
 // Cada error se muestra en rojo debajo de su campo y la cuenta no se crea hasta corregirlos.
 
-import { ROLES, RUTAS } from "../core/constants.js";
+import { ROLES, RUTAS, LOCALIDADES } from "../core/constants.js";
 import {
   validarEmail,
   validarPasswordNueva,
   validarTextoObligatorio,
   validarTerminos,
-  validarTelefonoObligatorio
+  validarTelefonoObligatorio,
+  validarLocalidad
 } from "../core/validators.js";
 import { manejarError, obtenerMensajeError, ErrorSenda } from "../core/errores.js";
 import {
@@ -21,7 +22,15 @@ import {
 } from "../services/authService.js";
 import { obtenerUsuario } from "../services/usuariosService.js";
 import { crearSolicitudComercio, existeComercioConNombre } from "../services/comerciosService.js";
-import { aplicarValidaciones, marcarErrorCampo, botonCargando, mostrarMensaje, ocultarMensaje } from "../ui/feedback.js";
+import { estaEnListaDeBloqueo } from "../services/bloqueosService.js";
+import {
+  aplicarValidaciones,
+  marcarErrorCampo,
+  botonCargando,
+  mostrarMensaje,
+  ocultarMensaje,
+  llenarSelectorLocalidad
+} from "../ui/feedback.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -37,6 +46,7 @@ const elementos = {
   dueno: $("registro-dueno"),
   direccion: $("registro-direccion"),
   telefono: $("registro-telefono"),
+  localidad: $("registro-localidad"),
   email: $("registro-email"),
   password: $("registro-password"),
   terminos: $("registro-terminos"),
@@ -72,6 +82,7 @@ const VALIDAR_CAMPO = {
   dueno: () => validarTextoObligatorio(elementos.dueno.value, "el nombre del dueño"),
   direccion: () => validarTextoObligatorio(elementos.direccion.value, "la dirección"),
   telefono: () => validarTelefonoObligatorio(elementos.telefono.value),
+  localidad: () => validarLocalidad(elementos.localidad.value, LOCALIDADES),
   email: () => validarEmail(elementos.email.value),
   password: () => validarPasswordNueva(elementos.password.value)
 };
@@ -81,6 +92,7 @@ function validacionesFormulario({ conCuentaDeCorreo }) {
     [elementos.nombre, validarNombre()],
     [elementos.dueno, VALIDAR_CAMPO.dueno()],
     [elementos.direccion, VALIDAR_CAMPO.direccion()],
+    [elementos.localidad, VALIDAR_CAMPO.localidad()],
     [elementos.telefono, VALIDAR_CAMPO.telefono()],
     ...(conCuentaDeCorreo
       ? [
@@ -125,14 +137,19 @@ function mostrarExito(email) {
 
 // Guarda los datos en Firestore con la cuenta "pendiente".
 // Si algo falla, borra la cuenta recién creada para que se pueda intentar de nuevo.
+// Si el correo o el teléfono pertenecen a una cuenta eliminada por no cumplir las normas,
+// la solicitud queda bloqueada desde el principio (el nombre del comercio sí se puede repetir).
 async function guardarSolicitud(usuario) {
+  const bloqueada = await estaEnListaDeBloqueo({ correo: usuario.email, telefono: elementos.telefono.value }).catch(() => false);
   try {
     await crearSolicitudComercio(usuario.uid, {
       nombre: elementos.nombre.value,
       dueno: elementos.dueno.value,
       direccion: elementos.direccion.value,
       telefono: elementos.telefono.value,
-      correo: usuario.email ?? ""
+      localidad: elementos.localidad.value,
+      correo: usuario.email ?? "",
+      bloqueada
     });
   } catch (error) {
     await eliminarCuentaActual().catch((e) => manejarError(e, "Deshacer registro"));
@@ -140,6 +157,7 @@ async function guardarSolicitud(usuario) {
   }
   // La cuenta sale de la sesión hasta que un administrador la valide.
   await cerrarSesion();
+  if (bloqueada) throw new ErrorSenda("senda/en-lista-bloqueo");
   mostrarExito(usuario.email);
 }
 
@@ -225,6 +243,8 @@ for (const campo of ["dueno", "direccion", "telefono", "email", "password"]) {
 elementos.terminos.addEventListener("change", () => {
   if (elementos.terminos.checked) marcarErrorCampo(elementos.terminos, "");
 });
+llenarSelectorLocalidad(elementos.localidad, LOCALIDADES, { placeholder: "Elegí la localidad del comercio" });
+elementos.localidad.addEventListener("change", () => marcarErrorCampo(elementos.localidad, VALIDAR_CAMPO.localidad()));
 
 
 try {

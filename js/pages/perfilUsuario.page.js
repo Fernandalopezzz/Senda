@@ -9,14 +9,15 @@
 // "Cerrar sesión" está en el encabezado, arriba a la derecha, como en el panel de los comercios.
 // No hay dirección, teléfono, horario ni datos de pago: SENDA compara precios, no vende.
 
-import { ROLES, RUTAS } from "../core/constants.js";
+import { ROLES, RUTAS, LOCALIDADES, LOCALIDAD_PREDETERMINADA } from "../core/constants.js";
 import {
   validarEmail,
   validarPassword,
   validarPasswordNueva,
   validarTextoObligatorio,
   validarImagen,
-  normalizarTexto
+  normalizarTexto,
+  validarLocalidad
 } from "../core/validators.js";
 import { manejarError, obtenerMensajeError } from "../core/errores.js";
 import {
@@ -31,7 +32,9 @@ import {
 import {
   obtenerMiCuenta,
   actualizarNombreCliente,
+  actualizarLocalidadCliente,
   subirFotoCliente,
+  obtenerClientes,
   listarComentariosDeCliente,
   eliminarDatosDeCuenta,
   guardarPreferenciaAvisos
@@ -43,6 +46,7 @@ import {
   EVENTO_FAVORITOS
 } from "../services/productosService.js";
 import { cargarCatalogo } from "../services/preciosService.js";
+import { obtenerOcultos, mostrarComercio, desbloquearCuenta } from "../services/bloqueosService.js";
 import { revisarCambiosDePrecio, marcarCambiosVistos } from "../services/avisosPrecioService.js";
 import { eliminarComentario } from "../services/opinionesService.js";
 import { borrarHistorial } from "../services/historialService.js";
@@ -62,7 +66,8 @@ import {
   confirmar,
   prepararModal,
   abrirModal,
-  cerrarModal
+  cerrarModal,
+  llenarSelectorLocalidad
 } from "../ui/feedback.js";
 import { crearTarjetaResumen, rutaDetalleProducto } from "../ui/components/tarjetaProducto.js";
 import { crearTarjetaComentario, htmlFotoCliente, rutaPerfilPublico } from "../ui/components/tarjetaComentario.js";
@@ -92,6 +97,7 @@ const elementos = {
   fotoEditar: $("foto-editar"),
   inputFoto: $("input-foto"),
   inputNombre: $("input-nombre"),
+  inputLocalidad: $("input-localidad"),
   usuarioFijo: $("usuario-fijo"),
   botonGuardarPerfil: $("boton-guardar-perfil"),
   // Mis favoritos
@@ -233,6 +239,8 @@ async function borrarComentario(comentario) {
 elementos.botonEditar.addEventListener("click", () => {
   elementos.inputNombre.value = estado.cuenta.nombre;
   marcarErrorCampo(elementos.inputNombre, "");
+  marcarErrorCampo(elementos.inputLocalidad, "");
+  llenarSelectorLocalidad(elementos.inputLocalidad, LOCALIDADES, { valor: estado.cuenta.localidad || LOCALIDAD_PREDETERMINADA });
   elementos.fotoEditar.innerHTML = htmlFotoCliente(estado.cuenta, "perfil-tarjeta__foto");
   elementos.usuarioFijo.textContent = `@${estado.cuenta.usuario}. No se puede cambiar, porque identifica tus comentarios.`;
   abrirModal(elementos.modalEditar);
@@ -262,11 +270,18 @@ elementos.inputFoto.addEventListener("change", async () => {
 elementos.formEditar.addEventListener("submit", async (evento) => {
   evento.preventDefault();
   const error = validarTextoObligatorio(elementos.inputNombre.value, "tu nombre", 60);
-  if (!aplicarValidaciones([[elementos.inputNombre, error]])) return;
+  if (!aplicarValidaciones([
+    [elementos.inputNombre, error],
+    [elementos.inputLocalidad, validarLocalidad(elementos.inputLocalidad.value, LOCALIDADES)]
+  ])) return;
   botonCargando(elementos.botonGuardarPerfil, true);
   try {
     await actualizarNombreCliente(estado.uid, elementos.inputNombre.value);
     estado.cuenta.nombre = elementos.inputNombre.value.trim();
+    if (elementos.inputLocalidad.value !== estado.cuenta.localidad) {
+      await actualizarLocalidadCliente(estado.uid, elementos.inputLocalidad.value);
+      estado.cuenta.localidad = elementos.inputLocalidad.value;
+    }
     renderizarFicha();
     cerrarModal(elementos.modalEditar);
     mostrarAviso("Guardaste los cambios de tu perfil.");
@@ -501,6 +516,54 @@ elementos.botonSalir.addEventListener("click", async () => {
 });
 
 // ======================================================
+// Configuración: comercios ocultos y cuentas bloqueadas
+// ======================================================
+
+async function renderizarOcultos() {
+  const lista = $("lista-ocultos");
+  try {
+    const ocultos = await obtenerOcultos(estado.uid);
+    const nombresComercios = new Map((estado.catalogo?.ocultosPorVos ?? []).map((c) => [c.id, c.nombre]));
+    const cuentas = await obtenerClientes(ocultos.cuentas);
+    const filas = [
+      ...ocultos.comercios.map((id) => ({ id, tipo: "comercio", nombre: nombresComercios.get(id) ?? "Comercio que ya no publica" })),
+      ...ocultos.cuentas.map((id) => ({ id, tipo: "cuenta", nombre: cuentas.get(id)?.usuario ? `@${cuentas.get(id).usuario}` : "Cuenta eliminada" }))
+    ];
+    if (filas.length === 0) {
+      lista.innerHTML = '<li class="lista-ocultos__vacio">No ocultaste comercios ni bloqueaste cuentas.</li>';
+      return;
+    }
+    lista.replaceChildren(
+      ...filas.map(({ id, tipo, nombre }) => {
+        const item = document.createElement("li");
+        item.className = "lista-ocultos__item";
+        item.innerHTML = `<span><strong>${escaparHTML(nombre)}</strong> <span class="lista-ocultos__tipo">${tipo === "comercio" ? "Comercio oculto" : "Cuenta bloqueada"}</span></span>`;
+        const boton = document.createElement("button");
+        boton.type = "button";
+        boton.className = "btn btn--linea btn--chico";
+        boton.textContent = tipo === "comercio" ? "Volver a mostrar" : "Desbloquear";
+        boton.addEventListener("click", async () => {
+          boton.disabled = true;
+          try {
+            if (tipo === "comercio") await mostrarComercio(estado.uid, id);
+            else await desbloquearCuenta(estado.uid, id);
+            mostrarAviso(tipo === "comercio" ? `${nombre} vuelve a aparecer en tus comparaciones.` : `Desbloqueaste a ${nombre}.`);
+            await renderizarOcultos();
+          } catch (error) {
+            boton.disabled = false;
+            mostrarAviso(manejarError(error, "Comercios ocultos y cuentas bloqueadas"), "error");
+          }
+        });
+        item.append(boton);
+        return item;
+      })
+    );
+  } catch (error) {
+    lista.innerHTML = `<li class="lista-ocultos__vacio">${escaparHTML(manejarError(error, "Comercios ocultos"))}</li>`;
+  }
+}
+
+// ======================================================
 // Inicio
 // ======================================================
 
@@ -522,6 +585,7 @@ async function cargarDatos() {
     renderizarAvisos();
     renderizarFavoritos();
     renderizarComentarios();
+    renderizarOcultos();
   } catch (error) {
     const mensaje = manejarError(error, "Carga de la cuenta personal");
     mostrarError(elementos.listaFavoritos, mensaje, cargarDatos);

@@ -36,22 +36,27 @@
         <a class="navegacion__enlace" href="ayuda.html">Ayuda</a>
       </nav>
       <!-- Navegación del administrador -->
+      <!-- Navegación del equipo (administrador y empleados). Empleados e Historial son solo del administrador. -->
       <nav class="navegacion" aria-label="Navegación de administración" data-panel="admin" hidden>
-        <a class="navegacion__enlace navegacion__enlace--activo" href="#panel-admin" aria-current="page">Validación de comercios</a>
         <a class="navegacion__enlace" href="index.html">Inicio</a>
+        <a class="navegacion__enlace" href="#comercios" data-seccion-equipo="comercios">Comercios</a>
+        <a class="navegacion__enlace" href="#revision" data-seccion-equipo="revision" data-solo-moderador hidden>Revisión <span class="navegacion__contador" id="contador-revision" hidden></span></a>
+        <a class="navegacion__enlace" href="#empleados" data-seccion-equipo="empleados" data-solo-admin hidden>Empleados</a>
+        <a class="navegacion__enlace" href="#historial" data-seccion-equipo="historial" data-solo-admin hidden>Historial</a>
       </nav>
       <div class="encabezado__acciones">
         <a class="btn btn--contorno btn--chico" id="enlace-perfil-publico" href="perfil-comercio.html" data-panel="comercio" hidden>Ver perfil público</a>
         <span class="avatar avatar--blanco" id="avatar-encabezado" aria-hidden="true" data-panel="comercio" hidden>--</span>
-        <span class="encabezado__rol" data-panel="admin" hidden>Administración</span>
+        <button class="btn btn--contorno btn--chico" type="button" id="boton-cambiar-contrasena" data-solo-empleado hidden>Cambiar contraseña</button>
+        <span class="encabezado__rol" id="rol-encabezado" data-panel="admin" hidden>Administración</span>
         <button class="enlace-boton encabezado__salir" type="button" id="boton-cerrar-sesion">Cerrar sesión</button>
       </div>
     </div>
 
     <!-- Cabecera del administrador -->
     <div class="contenedor admin-cabecera" data-panel="admin" hidden>
-      <h1 class="admin-cabecera__titulo">Validación de comercios</h1>
-      <p class="admin-cabecera__texto">Cuentas de comercio separadas por estado. El tilde acepta o vuelve a habilitar un comercio. El tachito rechaza o bloquea, y en "Bloqueados" elimina la cuenta. El ojo abre el perfil del comercio para revisar o eliminar productos.</p>
+      <h1 class="admin-cabecera__titulo" id="titulo-equipo">Validación de comercios</h1>
+      <p class="admin-cabecera__texto" id="texto-equipo">Cuentas de comercio separadas por estado. El tilde acepta o vuelve a habilitar un comercio. El tachito rechaza o bloquea, y en "Bloqueados" elimina la cuenta. El ojo abre el perfil del comercio para revisar o eliminar productos.</p>
     </div>
 
     <form class="contenedor perfil-comercio" id="form-perfil" novalidate data-panel="comercio" hidden>
@@ -99,6 +104,11 @@
             <p class="campo__error"></p>
           </div>
           <div class="campo">
+            <label class="campo__etiqueta" for="comercio-localidad">Localidad</label>
+            <select class="campo__control" id="comercio-localidad"></select>
+            <p class="campo__error"></p>
+          </div>
+          <div class="campo">
             <label class="campo__etiqueta" for="comercio-horario">Horario</label>
             <input class="campo__control" id="comercio-horario" type="text" maxlength="120" placeholder="Agregá días y horario...">
             <p class="campo__error"></p>
@@ -115,6 +125,7 @@
 
   <!-- Panel del administrador: validación de comercios -->
   <main class="contenedor admin" id="panel-admin" data-panel="admin" hidden>
+   <div id="seccion-comercios" data-seccion="comercios">
     <div class="pestanas" role="tablist" aria-label="Estado de los comercios">
       <button class="pestanas__boton" type="button" role="tab" id="pestana-pendiente" data-rol="pendiente" aria-selected="true" aria-controls="lista-solicitudes">
         Pendientes <span class="pestanas__cantidad" data-cantidad="pendiente">0</span>
@@ -138,11 +149,118 @@
     </section>
 
     <!-- Herramienta para el equipo: crea comercios ficticios para probar y presentar -->
-    <div class="admin__prueba">
+    <div class="admin__prueba" data-solo-admin hidden>
       <button class="enlace-boton" type="button" id="boton-datos-prueba">Cargar datos de prueba</button>
       <p class="admin-cabecera__progreso" id="progreso-datos-prueba" aria-live="polite"></p>
     </div>
+   </div>
+
+    <!-- Lista de revisión: reportes y contenido marcado automáticamente -->
+    <section class="equipo" id="seccion-revision" data-seccion="revision" aria-labelledby="titulo-revision" hidden>
+      <div class="equipo__cabecera">
+        <div>
+          <h2 class="seccion__titulo" id="titulo-revision">Para revisar</h2>
+          <p class="seccion__bajada" id="resumen-revision">&nbsp;</p>
+        </div>
+        <button class="btn btn--linea btn--chico" type="button" id="boton-actualizar-revision">Actualizar</button>
+      </div>
+      <div class="revision" id="lista-revision"></div>
+    </section>
+
+    <!-- Empleados (solo administrador) -->
+    <section class="equipo" id="seccion-empleados" data-seccion="empleados" aria-labelledby="titulo-empleados" hidden>
+      <div class="equipo__cabecera">
+        <div>
+          <h2 class="seccion__titulo" id="titulo-empleados">Empleados</h2>
+          <p class="seccion__bajada" id="resumen-empleados">&nbsp;</p>
+        </div>
+        <button class="btn btn--primario" type="button" id="boton-nuevo-empleado">
+          <svg class="icono" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Agregar empleado
+        </button>
+      </div>
+      <div class="equipo__lista" id="lista-empleados"></div>
+    </section>
+
+    <!-- Historial de moderación (solo administrador) -->
+    <section class="equipo" id="seccion-historial" data-seccion="historial" aria-labelledby="titulo-historial" hidden>
+      <div class="equipo__cabecera">
+        <div>
+          <h2 class="seccion__titulo" id="titulo-historial">Historial de moderación</h2>
+          <p class="seccion__bajada" id="resumen-historial">&nbsp;</p>
+        </div>
+        <label class="equipo__filtro">
+          <span>Mostrar acciones de</span>
+          <select class="campo__control" id="filtro-historial"><option value="">Todo el equipo</option></select>
+        </label>
+      </div>
+      <div class="equipo__lista" id="lista-historial"></div>
+    </section>
   </main>
+
+  <!-- Empleado deshabilitado: lo único que puede hacer es cerrar sesión -->
+  <main class="contenedor cuenta-deshabilitada" data-panel="deshabilitado" hidden>
+    <div class="cuenta-deshabilitada__tarjeta tarjeta" role="alert">
+      <svg class="cuenta-deshabilitada__icono" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+      <h1 class="cuenta-deshabilitada__titulo">Esta cuenta está deshabilitada</h1>
+      <p class="cuenta-deshabilitada__texto">Comunicate con soporte técnico de SENDA si necesitás volver a usarla. Mientras tanto no podés entrar al panel.</p>
+      <button class="btn btn--primario" type="button" id="boton-salir-deshabilitado">Cerrar sesión</button>
+    </div>
+  </main>
+
+  <!-- Alta de empleado -->
+  <dialog class="modal" id="modal-empleado" aria-labelledby="titulo-modal-empleado">
+    <form class="modal__contenido" id="form-empleado" novalidate>
+      <h2 class="modal__titulo" id="titulo-modal-empleado">Agregar empleado</h2>
+      <p class="modal__texto">El empleado entra con este correo y esta contraseña. Después puede cambiar la contraseña desde su panel.</p>
+      <div class="campo">
+        <label class="campo__etiqueta" for="empleado-nombre">Nombre y apellido</label>
+        <input class="campo__control" id="empleado-nombre" type="text" maxlength="60" autocomplete="off" required>
+        <p class="campo__error" aria-live="polite"></p>
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="empleado-correo">Correo electrónico</label>
+        <input class="campo__control" id="empleado-correo" type="email" maxlength="120" autocomplete="off" required>
+        <p class="campo__error" aria-live="polite"></p>
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="empleado-password">Contraseña inicial</label>
+        <input class="campo__control" id="empleado-password" type="text" maxlength="60" autocomplete="off" required>
+        <p class="campo__ayuda">Al menos 8 caracteres, con una letra y un número.</p>
+        <p class="campo__error" aria-live="polite"></p>
+      </div>
+      <fieldset class="campo equipo__permisos-alta">
+        <legend class="campo__etiqueta">Permisos</legend>
+        <div id="permisos-alta"></div>
+      </fieldset>
+      <div class="modal__acciones">
+        <button class="btn btn--linea" type="button" data-cerrar-modal>Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="boton-crear-empleado">Crear cuenta</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Cambio de contraseña del empleado -->
+  <dialog class="modal modal--chico" id="modal-contrasena" aria-labelledby="titulo-modal-contrasena">
+    <form class="modal__contenido" id="form-contrasena" novalidate>
+      <h2 class="modal__titulo" id="titulo-modal-contrasena">Cambiar contraseña</h2>
+      <div class="campo">
+        <label class="campo__etiqueta" for="contrasena-actual">Contraseña actual</label>
+        <input class="campo__control" id="contrasena-actual" type="password" autocomplete="current-password" required>
+        <p class="campo__error" aria-live="polite"></p>
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="contrasena-nueva">Contraseña nueva</label>
+        <input class="campo__control" id="contrasena-nueva" type="password" autocomplete="new-password" required>
+        <p class="campo__ayuda">Al menos 8 caracteres, con una letra y un número.</p>
+        <p class="campo__error" aria-live="polite"></p>
+      </div>
+      <div class="modal__acciones">
+        <button class="btn btn--linea" type="button" data-cerrar-modal>Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="boton-guardar-contrasena">Guardar</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Panel del comercio: perfil y productos -->
   <main class="contenedor panel" id="mis-productos" data-panel="comercio" hidden>

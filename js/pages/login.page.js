@@ -66,8 +66,9 @@ async function ingresar(obtenerUsuario, boton, textoCargando) {
   try {
     const usuario = await obtenerUsuario();
     // Al ingresar se vuelve al inicio; la cuenta se abre desde la foto y el nombre de la barra.
-    await resolverAcceso(usuario);
-    window.location.replace(RUTAS.INICIO);
+    const acceso = await resolverAcceso(usuario);
+    // Un empleado deshabilitado va directo al aviso de su panel.
+    window.location.replace(acceso.deshabilitado ? RUTAS.GESTION_COMERCIO : RUTAS.INICIO);
   } catch (error) {
     const tipo = error?.code === "senda/pendiente" ? "info" : "error";
     mostrarMensaje(elementos.mensajeLogin, manejarError(error, "Inicio de sesión"), tipo);
@@ -148,8 +149,9 @@ async function comprobarSesionExistente() {
   if (!usuario) return;
   try {
     // Al ingresar se vuelve al inicio; la cuenta se abre desde la foto y el nombre de la barra.
-    await resolverAcceso(usuario);
-    window.location.replace(RUTAS.INICIO);
+    const acceso = await resolverAcceso(usuario);
+    // Un empleado deshabilitado va directo al aviso de su panel.
+    window.location.replace(acceso.deshabilitado ? RUTAS.GESTION_COMERCIO : RUTAS.INICIO);
   } catch (error) {
     mostrarMensaje(elementos.mensajeLogin, manejarError(error, "Sesión existente"), "info");
   }

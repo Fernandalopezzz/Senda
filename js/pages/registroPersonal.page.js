@@ -3,14 +3,15 @@
 // La cuenta personal no necesita validación: al terminar queda con la sesión iniciada.
 // El correo no se guarda en Firestore. Queda en Authentication y solo lo ve la persona.
 
-import { ROLES, RUTAS } from "../core/constants.js";
+import { ROLES, RUTAS, LOCALIDADES } from "../core/constants.js";
 import {
   validarEmail,
   validarPasswordNueva,
   validarTextoObligatorio,
   validarTerminos,
   validarNombreUsuario,
-  normalizarNombreUsuario
+  normalizarNombreUsuario,
+  validarLocalidad
 } from "../core/validators.js";
 import { manejarError, obtenerMensajeError, ErrorSenda } from "../core/errores.js";
 import {
@@ -22,7 +23,15 @@ import {
 } from "../services/authService.js";
 import { obtenerUsuario } from "../services/usuariosService.js";
 import { crearCuentaPersonal, existeNombreUsuario } from "../services/clientesService.js";
-import { aplicarValidaciones, marcarErrorCampo, botonCargando, mostrarMensaje, ocultarMensaje } from "../ui/feedback.js";
+import { estaEnListaDeBloqueo } from "../services/bloqueosService.js";
+import {
+  aplicarValidaciones,
+  marcarErrorCampo,
+  botonCargando,
+  mostrarMensaje,
+  ocultarMensaje,
+  llenarSelectorLocalidad
+} from "../ui/feedback.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -30,6 +39,7 @@ const elementos = {
   formulario: $("form-registro"),
   nombre: $("registro-nombre"),
   usuario: $("registro-usuario"),
+  localidad: $("registro-localidad"),
   email: $("registro-email"),
   password: $("registro-password"),
   terminos: $("registro-terminos"),
@@ -49,6 +59,7 @@ const ERRORES_DE_CAMPO = {
 const VALIDAR_CAMPO = {
   nombre: () => validarTextoObligatorio(elementos.nombre.value, "tu nombre", 60),
   usuario: () => validarNombreUsuario(elementos.usuario.value),
+  localidad: () => validarLocalidad(elementos.localidad.value, LOCALIDADES),
   email: () => validarEmail(elementos.email.value),
   password: () => validarPasswordNueva(elementos.password.value)
 };
@@ -57,6 +68,7 @@ function validacionesFormulario({ conCuentaDeCorreo }) {
   return [
     [elementos.nombre, VALIDAR_CAMPO.nombre()],
     [elementos.usuario, VALIDAR_CAMPO.usuario()],
+    [elementos.localidad, VALIDAR_CAMPO.localidad()],
     ...(conCuentaDeCorreo
       ? [
           [elementos.email, VALIDAR_CAMPO.email()],
@@ -89,15 +101,23 @@ function bloquearBotones(bloquear) {
 }
 
 // Guarda el rol y el perfil. Si falla, borra la cuenta recién creada para poder intentar de nuevo.
+// Si el correo pertenece a una cuenta eliminada por no cumplir las normas, la cuenta nace bloqueada.
 async function guardarPerfil(usuario) {
+  const bloqueada = await estaEnListaDeBloqueo({ correo: usuario.email }).catch(() => false);
   try {
     await crearCuentaPersonal(usuario.uid, {
       nombre: elementos.nombre.value,
-      usuario: elementos.usuario.value
+      usuario: elementos.usuario.value,
+      localidad: elementos.localidad.value,
+      bloqueada
     });
   } catch (error) {
     await eliminarCuentaActual().catch((e) => manejarError(e, "Deshacer registro personal"));
     throw error;
+  }
+  if (bloqueada) {
+    await cerrarSesion();
+    throw new ErrorSenda("senda/en-lista-bloqueo");
   }
   window.location.replace(RUTAS.INICIO);
 }
@@ -182,6 +202,7 @@ for (const campo of Object.keys(VALIDAR_CAMPO)) {
 elementos.terminos.addEventListener("change", () => {
   if (elementos.terminos.checked) marcarErrorCampo(elementos.terminos, "");
 });
+llenarSelectorLocalidad(elementos.localidad, LOCALIDADES, { placeholder: "Elegí tu localidad" });
 
 try {
   verificarConfiguracion();

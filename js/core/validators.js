@@ -172,3 +172,8 @@ export function validarEtiquetas(valor) {
   if (etiquetas.some((e) => e.length > LIMITES.LARGO_ETIQUETA)) return `Cada etiqueta admite hasta ${LIMITES.LARGO_ETIQUETA} caracteres.`;
   return "";
 }
+
+// Localidad elegida de la lista cerrada de constants.js.
+export function validarLocalidad(valor, localidades) {
+  return localidades.includes(valor) ? "" : "Elegí tu localidad.";
+}

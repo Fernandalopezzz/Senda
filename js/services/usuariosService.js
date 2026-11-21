@@ -29,7 +29,8 @@ import { prepararImagen } from "./imagenesService.js";
 import { db, firebaseConfig } from "../config/firebase.js";
 import {
   COLECCIONES,
-  ROLES
+  ROLES,
+  LOCALIDAD_PREDETERMINADA
 } from "../core/constants.js";
 import { ErrorSenda } from "../core/errores.js";
 
@@ -124,7 +125,8 @@ async function registrarComercioDePrueba(conexion, comercio) {
     dueno: comercio.dueno,
     direccion: comercio.direccion,
     telefono: comercio.telefono,
-    horario: comercio.horario
+    horario: comercio.horario,
+    localidad: comercio.localidad || LOCALIDAD_PREDETERMINADA
   };
   const existente = await getDoc(doc(conexion.db, COLECCIONES.COMERCIOS, usuario.uid));
   // Un comercio pendiente puede crear su perfil. Si ya existe, lo actualiza después de la validación.
@@ -140,7 +142,7 @@ async function publicarComercioDePrueba(conexion, comercio, productoIdPorNombre,
   const usuario = await entrarComoComercio(conexion.auth, comercio);
   await setDoc(
     doc(conexion.db, COLECCIONES.COMERCIOS, usuario.uid),
-    { nombre: comercio.nombre, dueno: comercio.dueno, direccion: comercio.direccion, telefono: comercio.telefono, horario: comercio.horario },
+    { nombre: comercio.nombre, dueno: comercio.dueno, direccion: comercio.direccion, telefono: comercio.telefono, horario: comercio.horario, localidad: comercio.localidad || LOCALIDAD_PREDETERMINADA },
     { merge: true }
   );
 

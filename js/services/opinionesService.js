@@ -8,14 +8,16 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  addDoc,
   collection,
   query,
   where,
-  serverTimestamp
+  serverTimestamp,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 import { db } from "../config/firebase.js";
-import { COLECCIONES, REACCIONES } from "../core/constants.js";
+import { COLECCIONES, REACCIONES, TIPOS_REPORTE } from "../core/constants.js";
+import { revisarTexto } from "../core/palabrasProhibidas.js";
+import { marcarEnLote } from "./reportesService.js";
 
 function idReaccion(productoId, uid) {
   return `${productoId}_${uid}`;
@@ -56,15 +58,32 @@ export async function listarComentarios(productoId) {
     .sort((a, b) => (b.fecha?.toMillis?.() ?? Date.now()) - (a.fecha?.toMillis?.() ?? Date.now()));
 }
 
-export async function publicarComentario({ productoId, comercioId = "", uid, texto }) {
-  const referencia = await addDoc(collection(db, COLECCIONES.COMENTARIOS), {
+// Si el texto tiene palabras no permitidas (ver palabrasProhibidas.js), el comentario se guarda
+// igual pero queda oculto y entra con prioridad a la lista de revisión del equipo.
+// Devuelve { id, enRevision }.
+export async function publicarComentario({ productoId, comercioId = "", uid, texto, productoNombre = "" }) {
+  const referencia = doc(collection(db, COLECCIONES.COMENTARIOS));
+  const lote = writeBatch(db);
+  lote.set(referencia, {
     productoId,
     comercioId,
     clienteId: uid,
     texto: texto.trim(),
     fecha: serverTimestamp()
   });
-  return referencia.id;
+  const revision = revisarTexto(texto);
+  if (revision.ofensivo || revision.noApto) {
+    await marcarEnLote(lote, {
+      tipo: TIPOS_REPORTE.COMENTARIO,
+      objetivoId: referencia.id,
+      objetivoNombre: `${texto.trim().length > 70 ? `${texto.trim().slice(0, 67)}...` : texto.trim()}${productoNombre ? ` (en ${productoNombre})` : ""}`,
+      duenoId: uid,
+      comercioId,
+      motivoAutomatico: revision.motivo
+    });
+  }
+  await lote.commit();
+  return { id: referencia.id, enRevision: revision.ofensivo || revision.noApto };
 }
 
 // Lo usa el autor o el administrador.

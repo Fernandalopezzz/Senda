@@ -2,7 +2,7 @@
 //   comercio: edición del perfil (foto y fondo) y gestión de productos, precios y stock.
 //   admin:    validación de los comercios registrados (aprobar o rechazar).
 
-import { LIMITES, ROLES, RUTAS } from "../core/constants.js";
+import { LIMITES, ROLES, RUTAS, LOCALIDADES, LOCALIDAD_PREDETERMINADA, ORIGENES } from "../core/constants.js";
 import { manejarError, ErrorSenda } from "../core/errores.js";
 import {
   validarTextoObligatorio,
@@ -12,7 +12,8 @@ import {
   validarTelefono,
   validarPrecio,
   validarPorcentaje,
-  validarImagen
+  validarImagen,
+  validarLocalidad
 } from "../core/validators.js";
 import { protegerPagina } from "../guards/sessionGuard.js";
 import { listarUsuariosPorRol, cargarComerciosDePrueba } from "../services/usuariosService.js";
@@ -28,7 +29,6 @@ import {
 } from "../services/comerciosService.js";
 import {
   listarProductos,
-  actualizarProducto,
   nuevoIdProducto,
   subirImagenProducto,
   esCreadorDelProducto,
@@ -38,6 +38,7 @@ import {
   listarPreciosPorComercio,
   crearPrecio,
   crearProductoConPrecio,
+  actualizarProductoRevisado,
   actualizarPrecio,
   actualizarDisponibilidad,
   calcularPrecioFinal
@@ -61,12 +62,23 @@ import {
   abrirModal,
   cerrarModal,
   prepararModal,
-  confirmar
+  confirmar,
+  llenarSelectorLocalidad
 } from "../ui/feedback.js";
 import { crearImagenProducto, crearFiltros, filtrarItems } from "../ui/components/tarjetaProducto.js";
 import { rutaPerfilComercio } from "../ui/components/tarjetaComercio.js";
 import { revisarAvisosDelComercio } from "../ui/components/avisosComercio.js";
-import { ACCIONES_POR_ESTADO, ELIMINAR_CUENTA, aplicarAccionComercio } from "../ui/components/accionesComercio.js";
+import { revisarAvisosDeModeracion } from "../ui/components/reportar.js";
+import { ELIMINAR_CUENTA, accionesPermitidas, aplicarAccionComercio } from "../ui/components/accionesComercio.js";
+import {
+  prepararEmpleados,
+  cargarEmpleados,
+  prepararHistorial,
+  cargarHistorial,
+  prepararCambioDeContrasena
+} from "../ui/components/panelEquipo.js";
+import { prepararRevision, cargarRevision } from "../ui/components/panelRevision.js";
+import { obtenerActor } from "../services/moderacionService.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -82,6 +94,7 @@ const elementos = {
   nombre: $("comercio-nombre"),
   telefono: $("comercio-telefono"),
   direccion: $("comercio-direccion"),
+  localidad: $("comercio-localidad"),
   horario: $("comercio-horario"),
   botonGuardarPerfil: $("boton-guardar-perfil"),
   encabezadoPanel: $("perfil"),
@@ -216,6 +229,7 @@ async function cargarPerfil() {
     elementos.nombre.value = comercio?.nombre ?? "";
     elementos.telefono.value = comercio?.telefono ?? "";
     elementos.direccion.value = comercio?.direccion ?? "";
+    llenarSelectorLocalidad(elementos.localidad, LOCALIDADES, { valor: comercio?.localidad || LOCALIDAD_PREDETERMINADA });
     elementos.horario.value = comercio?.horario ?? "";
     actualizarAvatares(elementos.nombre.value);
   } catch (error) {
@@ -229,6 +243,7 @@ async function guardarPerfil(evento) {
     [elementos.nombre, validarTextoObligatorio(elementos.nombre.value, "el nombre del comercio")],
     [elementos.telefono, validarTelefono(elementos.telefono.value)],
     [elementos.direccion, validarTextoOpcional(elementos.direccion.value, "la dirección")],
+    [elementos.localidad, validarLocalidad(elementos.localidad.value, LOCALIDADES)],
     [elementos.horario, validarTextoOpcional(elementos.horario.value, "el horario")]
   ]);
   if (!valido) return;
@@ -244,6 +259,7 @@ async function guardarPerfil(evento) {
       nombre: elementos.nombre.value.trim(),
       telefono: elementos.telefono.value.trim(),
       direccion: elementos.direccion.value.trim(),
+      localidad: elementos.localidad.value,
       horario: elementos.horario.value.trim()
     });
     actualizarAvatares(elementos.nombre.value);
@@ -529,6 +545,7 @@ async function publicarProducto() {
   };
 
   botonCargando(elementos.botonGuardarProducto, true, "Publicando...");
+  let avisoRevision = false;
   try {
     if (existenteId) {
       if (estado.items.some(({ producto }) => producto.id === existenteId)) {
@@ -543,10 +560,16 @@ async function publicarProducto() {
         elementos.botonGuardarProducto.textContent = "Subiendo imagen...";
         datos.imagen = await subirImagenProducto(productoId, estado.archivoImagen);
       }
-      await crearProductoConPrecio(productoId, datos, datosPrecio);
+      const { enRevision } = await crearProductoConPrecio(productoId, datos, datosPrecio);
+      if (enRevision) avisoRevision = true;
     }
     cerrarModal(elementos.modalProducto);
-    mostrarAviso("Publicaste el producto.");
+    mostrarAviso(
+      avisoRevision
+        ? "Publicaste el producto, pero quedó oculto y en revisión porque tiene palabras no permitidas o no es apto para la venta. El equipo de SENDA lo va a revisar."
+        : "Publicaste el producto.",
+      avisoRevision ? "error" : undefined
+    );
     await cargarProductos();
   } catch (error) {
     mostrarMensaje(elementos.mensajeProducto, manejarError(error, "Publicación de producto"));
@@ -566,11 +589,15 @@ async function editarProducto() {
       elementos.botonGuardarProducto.textContent = "Subiendo imagen...";
       datos.imagen = await subirImagenProducto(item.producto.id, estado.archivoImagen);
     }
-    await actualizarProducto(item.producto.id, datos);
+    const { enRevision } = await actualizarProductoRevisado(item.producto.id, datos, estado.comercioId);
     Object.assign(item.producto, normalizarProducto(datos));
     cerrarModal(elementos.modalProducto);
     renderizarProductos();
-    mostrarAviso("Guardamos los cambios del producto.");
+    if (enRevision) {
+      mostrarAviso("Guardamos los cambios, pero el producto quedó oculto y en revisión porque tiene palabras no permitidas o no es apto para la venta.", "error");
+    } else {
+      mostrarAviso("Guardamos los cambios del producto.");
+    }
   } catch (error) {
     mostrarMensaje(elementos.mensajeProducto, manejarError(error, "Edición de producto"));
   } finally {
@@ -674,8 +701,9 @@ function prepararEventos() {
 }
 
 // ======================================================
-// Panel del administrador: validación de comercios
+// Panel del equipo (administrador y empleados): validación de comercios
 // Un comercio se aprueba o rechaza cambiando el campo "rol" de su documento en "usuarios".
+// El empleado ve las mismas pestañas, pero solo los botones de las tareas que tiene habilitadas.
 // ======================================================
 
 // El administrador ve las cuentas de comercio en tres pestañas: Pendientes, Validados y Bloqueados.
@@ -709,6 +737,8 @@ const admin = {
   credenciales: $("credenciales-prueba"),
   tablaCredenciales: $("tabla-credenciales"),
   rolVisible: ROLES.PENDIENTE,
+  // Quien usa el panel: { uid, nombre, correo, rol, empleado } (ver obtenerActor).
+  actor: null,
   // Para cada estado, la lista de { usuario, comercio }.
   porEstado: { [ROLES.PENDIENTE]: [], [ROLES.COMERCIO]: [], [ROLES.RECHAZADO]: [] }
 };
@@ -828,7 +858,7 @@ function crearFilaSolicitud(solicitud) {
     enlace.innerHTML = ICONOS.ver;
     acciones.append(enlace);
   }
-  for (const { icono, texto, destino } of ACCIONES_POR_ESTADO[admin.rolVisible]) {
+  for (const { icono, texto, destino } of accionesPermitidas(admin.rolVisible, admin.actor)) {
     acciones.append(crearBotonIcono(icono, `${texto}: ${nombre}`, () => cambiarEstado(solicitud, destino)));
   }
   fila.append(acciones);
@@ -856,7 +886,9 @@ async function cambiarEstado(solicitud, destino) {
       comercioId: solicitud.usuario.id,
       nombre,
       rolActual: rolAnterior,
-      destino
+      destino,
+      actor: admin.actor,
+      origen: ORIGENES.PANEL
     });
     if (resultado) {
       admin.porEstado[rolAnterior] = admin.porEstado[rolAnterior].filter((s) => s !== solicitud);
@@ -928,13 +960,89 @@ async function iniciarPanelComercio() {
   elementos.cargaPagina.hidden = true;
   // Si el administrador eliminó algún producto, el aviso aparece al entrar al panel.
   revisarAvisosDelComercio(estado.comercioId);
+  revisarAvisosDeModeracion(estado.comercioId);
   await Promise.all([cargarPerfil(), cargarProductos()]);
 }
 
-async function iniciarPanelAdmin() {
+// Textos de la cabecera de cada sección del equipo.
+const SECCIONES_EQUIPO = {
+  comercios: {
+    titulo: "Validación de comercios",
+    texto: 'Cuentas de comercio separadas por estado. El tilde acepta o vuelve a habilitar un comercio. El tachito rechaza o bloquea, y en "Bloqueados" elimina la cuenta. El ojo abre el perfil del comercio para revisar sus productos.'
+  },
+  empleados: {
+    titulo: "Empleados",
+    texto: "Cuentas del equipo de SENDA. Las casillas eligen qué tareas puede hacer cada empleado y se guardan al marcarlas. La X deshabilita la cuenta."
+  },
+  revision: {
+    titulo: "Revisión de reportes",
+    texto: "Lo que recibió 3 reportes o tiene palabras no permitidas. Primero lo marcado con prioridad y después lo más reportado. Cada decisión pide un motivo y queda en el historial."
+  },
+  historial: {
+    titulo: "Historial de moderación",
+    texto: "Quién validó, bloqueó o eliminó cada cuenta, cuándo, por qué y desde dónde. Solo lo ve el administrador."
+  }
+};
+
+const seccionesCargadas = new Set();
+
+// Muestra la sección del menú según el # de la dirección (#comercios, #empleados o #historial).
+function mostrarSeccionEquipo() {
+  const esAdmin = admin.actor.rol === ROLES.ADMIN;
+  const puedeModerar = esAdmin || admin.actor.empleado?.permisos?.moderar === true;
+  let nombre = window.location.hash.slice(1);
+  const permitida = esAdmin || nombre === "comercios" || (nombre === "revision" && puedeModerar);
+  if (!SECCIONES_EQUIPO[nombre] || !permitida) nombre = "comercios";
+  document.querySelectorAll("[data-seccion]").forEach((seccion) => (seccion.hidden = seccion.dataset.seccion !== nombre));
+  document.querySelectorAll("[data-seccion-equipo]").forEach((enlace) => {
+    const activo = enlace.dataset.seccionEquipo === nombre;
+    enlace.classList.toggle("navegacion__enlace--activo", activo);
+    if (activo) enlace.setAttribute("aria-current", "page");
+    else enlace.removeAttribute("aria-current");
+  });
+  $("titulo-equipo").textContent = SECCIONES_EQUIPO[nombre].titulo;
+  $("texto-equipo").textContent =
+    esAdmin || nombre !== "comercios"
+      ? SECCIONES_EQUIPO[nombre].texto
+      : "Cuentas de comercio separadas por estado. Solo ves los botones de las tareas que el administrador te habilitó. El ojo abre el perfil del comercio.";
+  document.title = `${SECCIONES_EQUIPO[nombre].titulo} · SENDA`;
+  // Empleados e historial se leen la primera vez que se abren.
+  if (seccionesCargadas.has(nombre)) return;
+  seccionesCargadas.add(nombre);
+  if (nombre === "empleados") cargarEmpleados();
+  if (nombre === "historial") cargarHistorial();
+  if (nombre === "revision") cargarRevision();
+}
+
+async function iniciarPanelAdmin(actor) {
+  admin.actor = actor;
+  const esAdmin = actor.rol === ROLES.ADMIN;
   mostrarPanel("admin");
-  document.title = "Validación de comercios · SENDA";
-  admin.botonDatosPrueba.addEventListener("click", cargarDatosDePrueba);
+  document.querySelectorAll("[data-solo-admin]").forEach((elemento) => (elemento.hidden = !esAdmin));
+  document.querySelectorAll("[data-solo-empleado]").forEach((elemento) => (elemento.hidden = esAdmin));
+  const puedeModerar = esAdmin || actor.empleado?.permisos?.moderar === true;
+  document.querySelectorAll("[data-solo-moderador]").forEach((elemento) => (elemento.hidden = !puedeModerar));
+  if (puedeModerar) {
+    prepararRevision(actor);
+    // El número de "Revisión" se ve desde cualquier sección.
+    if (!window.location.hash.includes("revision")) cargarRevision();
+  }
+  $("rol-encabezado").textContent = esAdmin ? "Administración" : `Empleado · ${actor.nombre}`;
+
+  if (esAdmin) {
+    admin.botonDatosPrueba.addEventListener("click", cargarDatosDePrueba);
+    prepararEmpleados(actor);
+    prepararHistorial();
+  } else {
+    prepararCambioDeContrasena();
+    // Sin el permiso "Ver pendientes" la pestaña de solicitudes nuevas no aparece.
+    if (!actor.empleado.permisos?.verPendientes) {
+      $("pestana-pendiente").hidden = true;
+      admin.rolVisible = ROLES.COMERCIO;
+    }
+  }
+  window.addEventListener("hashchange", mostrarSeccionEquipo);
+  mostrarSeccionEquipo();
   elementos.cargaPagina.hidden = true;
   // Mensaje que deja el perfil del comercio después de eliminar una cuenta.
   try {
@@ -950,10 +1058,22 @@ async function iniciarPanelAdmin() {
   await cargarSolicitudes();
 }
 
+// Empleado deshabilitado: un aviso grande y el botón para cerrar sesión. Nada más.
+function mostrarCuentaDeshabilitada() {
+  mostrarPanel("deshabilitado");
+  document.title = "Cuenta deshabilitada · SENDA";
+  document.querySelector(".encabezado__acciones").hidden = true;
+  elementos.cargaPagina.hidden = true;
+  $("boton-salir-deshabilitado").addEventListener("click", async () => {
+    await cerrarSesion().catch(() => {});
+    window.location.replace(RUTAS.INICIO);
+  });
+}
+
 async function iniciar() {
   let sesion;
   try {
-    sesion = await protegerPagina([ROLES.COMERCIO, ROLES.ADMIN]);
+    sesion = await protegerPagina([ROLES.COMERCIO, ROLES.ADMIN, ROLES.EMPLEADO]);
   } catch (error) {
     elementos.textoCargaPagina.textContent = manejarError(error, "Acceso al panel");
     return;
@@ -968,8 +1088,19 @@ async function iniciar() {
     }
   });
 
-  if (sesion.perfil.rol === ROLES.ADMIN) {
-    await iniciarPanelAdmin();
+  if (sesion.perfil.rol === ROLES.ADMIN || sesion.perfil.rol === ROLES.EMPLEADO) {
+    let actor;
+    try {
+      actor = await obtenerActor(sesion.usuario, sesion.perfil.rol);
+    } catch (error) {
+      elementos.textoCargaPagina.textContent = manejarError(error, "Datos del equipo");
+      return;
+    }
+    if (actor.rol === ROLES.EMPLEADO && !actor.empleado?.activo) {
+      mostrarCuentaDeshabilitada();
+      return;
+    }
+    await iniciarPanelAdmin(actor);
   } else {
     estado.comercioId = sesion.usuario.uid;
     estado.correo = sesion.usuario.email ?? "";

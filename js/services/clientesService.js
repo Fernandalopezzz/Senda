@@ -34,7 +34,8 @@ export async function obtenerMiCuenta(uid) {
     getDoc(doc(db, COLECCIONES.CLIENTES_PRIVADOS, uid))
   ]);
   if (!publico) return null;
-  return { ...publico, nombre: privado.exists() ? privado.data().nombre : "" };
+  const datos = privado.exists() ? privado.data() : {};
+  return { ...publico, nombre: datos.nombre ?? "", localidad: datos.localidad ?? "" };
 }
 
 // Perfiles de varios clientes a la vez (autores de comentarios). Devuelve un Map uid → perfil.
@@ -53,19 +54,26 @@ export async function existeNombreUsuario(usuario) {
 }
 
 // Crea el rol y el perfil en una sola escritura en lote: se guardan los dos o ninguno.
-export async function crearCuentaPersonal(uid, { nombre, usuario }) {
+// bloqueada: el correo está en la lista de bloqueo (ver bloqueosService.js). La cuenta se crea
+// igual, pero con el rol "bloqueado", y no puede ingresar.
+export async function crearCuentaPersonal(uid, { nombre, usuario, localidad = "", bloqueada = false }) {
   const lote = writeBatch(db);
-  lote.set(doc(db, COLECCIONES.USUARIOS, uid), { rol: ROLES.CLIENTE });
+  lote.set(doc(db, COLECCIONES.USUARIOS, uid), { rol: bloqueada ? ROLES.BLOQUEADO : ROLES.CLIENTE });
   lote.set(doc(db, COLECCIONES.CLIENTES, uid), {
     usuario: normalizarNombreUsuario(usuario),
     foto: ""
   });
-  lote.set(doc(db, COLECCIONES.CLIENTES_PRIVADOS, uid), { nombre: nombre.trim() });
+  lote.set(doc(db, COLECCIONES.CLIENTES_PRIVADOS, uid), { nombre: nombre.trim(), localidad });
   await lote.commit();
 }
 
+// Con merge se conserva la localidad cuando solo cambia el nombre, y al revés.
 export function actualizarNombreCliente(uid, nombre) {
-  return setDoc(doc(db, COLECCIONES.CLIENTES_PRIVADOS, uid), { nombre: nombre.trim() });
+  return setDoc(doc(db, COLECCIONES.CLIENTES_PRIVADOS, uid), { nombre: nombre.trim() }, { merge: true });
+}
+
+export function actualizarLocalidadCliente(uid, localidad) {
+  return setDoc(doc(db, COLECCIONES.CLIENTES_PRIVADOS, uid), { localidad }, { merge: true });
 }
 
 // Achica la foto, la guarda en el perfil y devuelve el data URL.

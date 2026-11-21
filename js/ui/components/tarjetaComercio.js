@@ -10,6 +10,14 @@ export function htmlNoValidado(comercio, clase = "") {
   return comercio.validado === false ? `<span class="no-validado ${clase}">Comercio no validado</span>` : "";
 }
 
+// Insignia verde para los comercios que actualizaron algún precio o stock en el día.
+// comercio.actualizadoHoy lo calcula armarCatalogo (preciosService).
+export function htmlActualizadoHoy(comercio) {
+  return comercio?.actualizadoHoy
+    ? '<span class="insignia-hoy" title="Este comercio actualizó sus precios hoy">Actualizado hoy</span>'
+    : "";
+}
+
 // Foto del comercio o, si todavía no subió una, sus iniciales.
 export function htmlAvatarComercio(comercio, clase = "") {
   return comercio?.foto
@@ -45,8 +53,9 @@ export function crearTarjetaCuentaComercio({ comercio, cantidadProductos }) {
     ${htmlAvatarComercio(comercio, "avatar--grande")}
     <div class="cuenta-comercio__datos">
       <h3 class="cuenta-comercio__nombre">${escaparHTML(comercio.nombre)}</h3>
+      ${htmlActualizadoHoy(comercio)}
       ${htmlNoValidado(comercio)}
-      <p class="cuenta-comercio__detalle">${escaparHTML(comercio.direccion || "Dirección sin cargar")}</p>
+      <p class="cuenta-comercio__detalle">${escaparHTML(comercio.direccion || "Dirección sin cargar")}${comercio.localidad ? ` · ${escaparHTML(comercio.localidad)}` : ""}</p>
       <p class="cuenta-comercio__detalle">${textoCantidad}</p>
     </div>
     <a class="btn btn--primario btn--chico" href="${rutaPerfilComercio(comercio.id)}">Ver comercio</a>`;

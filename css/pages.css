@@ -177,9 +177,11 @@
 }
 
 /* Ofertas */
+/* Seis tarjetas por fila: con el ancho de una computadora la fila queda completa,
+   sin espacio vacío a los costados. */
 .grilla-ofertas {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -917,7 +919,7 @@
 
 .grilla-resultados {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -929,7 +931,7 @@
 
 .grilla-comercios {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -1013,7 +1015,7 @@
 
 .grilla-catalogo {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 16px;
 }
 
@@ -2605,4 +2607,515 @@ input[type="file"]:focus-visible + .adjuntar,
 
 .ayuda__seccion details p {
   margin: 8px 0 0;
+}
+
+/* =========================================================
+   Comercios de tu zona, precio por unidad e insignia "Actualizado hoy"
+   ========================================================= */
+.zona {
+  display: grid;
+  gap: 22px;
+}
+
+.zona__selector {
+  display: grid;
+  gap: 4px;
+  min-width: 240px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.zona__comercio {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.zona__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.zona__logo {
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.zona__datos {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.zona__nombre {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.2rem;
+}
+
+.zona__nombre a {
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.zona__nombre a:hover {
+  text-decoration: underline;
+}
+
+.zona__detalle {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--texto-suave);
+}
+
+.insignia-hoy {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--verde-suave);
+  color: var(--verde);
+  font-family: var(--fuente-texto);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.precio-unidad,
+.mejor-precio__unidad,
+.fila-comercio__unidad {
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+}
+
+.mejor-precio__unidad {
+  font-size: 0.88rem;
+}
+
+.fila-comercio__precios {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+/* =========================================================
+   Panel del equipo: empleados, historial y cuenta deshabilitada
+   ========================================================= */
+.equipo {
+  display: grid;
+  gap: 18px;
+}
+
+.equipo__cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.equipo__lista {
+  overflow-x: auto;
+  padding: 6px 18px;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.equipo__filtro {
+  display: grid;
+  gap: 4px;
+  min-width: 280px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.equipo__permisos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.equipo__permiso {
+  font-size: 0.86rem;
+}
+
+.equipo__permisos-alta {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.equipo__permisos-alta #permisos-alta {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Fila de un empleado deshabilitado: en gris y al final de la tabla */
+.tabla-empleados__fila--deshabilitada th,
+.tabla-empleados__fila--deshabilitada td {
+  color: var(--texto-suave);
+  background: var(--campo);
+}
+
+.tabla-empleados__fila--deshabilitada a {
+  color: var(--texto-suave);
+}
+
+.insignia-deshabilitado,
+.insignia-accion {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--borde);
+  color: var(--texto-suave);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.insignia-accion {
+  margin-left: 0;
+  background: var(--azul-suave);
+  color: var(--azul-oscuro);
+}
+
+.tabla-historial td,
+.tabla-historial th {
+  vertical-align: top;
+}
+
+.tabla-historial__fecha {
+  white-space: nowrap;
+}
+
+.tabla-historial__correo,
+.tabla-historial__tipo {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
+/* Confirmación grande: para acciones que hay que leer con atención (deshabilitar un empleado) */
+.modal--confirmacion-grande {
+  width: min(620px, calc(100vw - 32px));
+}
+
+.modal--confirmacion-grande .modal__contenido {
+  padding: 36px 40px;
+}
+
+.modal--confirmacion-grande .modal__titulo {
+  font-size: 1.6rem;
+}
+
+.modal--confirmacion-grande .modal__texto {
+  font-size: 1.02rem;
+}
+
+/* Empleado deshabilitado */
+.cuenta-deshabilitada {
+  display: grid;
+  place-items: center;
+  min-height: 52vh;
+  padding-block: 40px 80px;
+}
+
+.cuenta-deshabilitada__tarjeta {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 680px;
+  padding: 48px 56px;
+  text-align: center;
+}
+
+.cuenta-deshabilitada__icono {
+  width: 72px;
+  height: 72px;
+  fill: none;
+  stroke: var(--rojo);
+  stroke-width: 2;
+}
+
+.cuenta-deshabilitada__titulo {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 2rem;
+}
+
+.cuenta-deshabilitada__texto {
+  margin: 0 0 8px;
+  font-size: 1.08rem;
+  color: var(--texto-suave);
+}
+
+/* =========================================================
+   Reportes, revisión y bloqueos
+   ========================================================= */
+.insignia-revision {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #fff3d6;
+  color: #8a5a00;
+  font-family: var(--fuente-texto);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+[data-tema="oscuro"] .insignia-revision {
+  background: #3a2f14;
+  color: #f2c94c;
+}
+
+.boton-reportar.boton-icono {
+  width: 32px;
+  height: 32px;
+  color: var(--texto-suave);
+}
+
+.boton-reportar.boton-icono:hover {
+  color: var(--rojo);
+  background: var(--rojo-suave);
+}
+
+.boton-reportar .icono {
+  width: 16px;
+  height: 16px;
+}
+
+.comentario__reportar {
+  grid-column: 3;
+  align-self: start;
+}
+
+.comentario__borrar + .comentario__reportar {
+  grid-column: 3;
+}
+
+.detalle__reportar {
+  margin: 4px 0 0;
+}
+
+/* Fila de cada comercio en "Dónde comprar": se suma la columna del botón Reportar */
+.fila-comercio {
+  grid-template-columns: auto 1fr auto auto auto;
+}
+
+.perfil-publico__moderacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.perfil-publico__moderacion:empty {
+  display: none;
+}
+
+.btn--sobre-oscuro {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  color: var(--blanco);
+}
+
+.btn--sobre-oscuro:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.perfil-publico__oculto {
+  margin-top: 14px;
+}
+
+.perfil-tarjeta__acciones {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Tarjeta para reportar */
+.reporte__objetivo {
+  padding: 8px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--campo);
+  font-weight: 600;
+}
+
+.reporte__motivos {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+/* Avisos de moderación para el dueño del contenido */
+.avisos-moderacion {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.avisos-moderacion__item {
+  padding: 12px 14px;
+  border-left: 4px solid var(--azul);
+  border-radius: var(--radio-chico);
+  background: var(--campo);
+}
+
+.avisos-moderacion__item p {
+  margin: 4px 0 0;
+  font-size: 0.92rem;
+}
+
+.avisos-moderacion__item--advertencia,
+.avisos-moderacion__item--oculto {
+  border-left-color: var(--rojo);
+}
+
+.avisos-moderacion__item--aprobado {
+  border-left-color: var(--verde);
+}
+
+/* Configuración: comercios ocultos y cuentas bloqueadas */
+.ajustes__ayuda {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  color: var(--texto-suave);
+}
+
+.lista-ocultos {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-ocultos__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--borde);
+}
+
+.lista-ocultos__tipo,
+.lista-ocultos__vacio {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* Lista de revisión del equipo */
+.navegacion__contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--amarillo);
+  color: var(--marino);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.revision {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.revision .estado {
+  grid-column: 1 / -1;
+}
+
+.revision__item {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 18px 20px;
+  border-left: 4px solid var(--borde);
+}
+
+.revision__item--prioridad {
+  border-left-color: var(--rojo);
+}
+
+.revision__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.revision__tipo {
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+}
+
+.revision__cantidad {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.revision__nombre {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.revision__dato {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.revision__fecha {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.revision__reportes summary {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+  cursor: pointer;
+}
+
+.revision__lista-reportes {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 0.86rem;
+}
+
+.revision__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.revision__espera {
+  align-self: center;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--texto-suave);
 }

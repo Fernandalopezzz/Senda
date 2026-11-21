@@ -3,7 +3,8 @@
 
 import { RUTAS } from "../../core/constants.js";
 import { validarRangoPrecio, normalizarTexto } from "../../core/validators.js";
-import { escaparHTML, precioHTML, mostrarAviso } from "../feedback.js";
+import { escaparHTML, precioHTML, precioTexto, mostrarAviso } from "../feedback.js";
+import { precioPorUnidad } from "../../services/preciosService.js";
 import { esFavorito, alternarFavorito, EVENTO_FAVORITOS } from "../../services/productosService.js";
 
 // Imagen del producto. Si no tiene imagen o no carga, muestra la ilustración de los wireframes.
@@ -56,6 +57,13 @@ export function crearBotonFavorito(producto, clase = "") {
   return boton;
 }
 
+// "$ 2.010 por kg": permite comparar envases de distinto tamaño. Vacío si la presentación
+// no indica un peso o un volumen.
+export function htmlPrecioPorUnidad(precio, presentacion, clase = "precio-unidad") {
+  const unidad = precioPorUnidad(precio, presentacion);
+  return unidad ? `<p class="${clase}">${precioTexto(unidad.valor)} por ${unidad.unidad}</p>` : "";
+}
+
 // datos: { producto, precio, descuento, conDesde, detalle }
 //   conDesde: muestra "Desde" arriba del precio (precio mínimo entre comercios)
 //   detalle: texto debajo del precio, por ejemplo "en 3 comercios" o "Sin stock"
@@ -77,6 +85,7 @@ export function crearTarjetaProducto({ producto, precio, descuento = 0, conDesde
     <h3 class="tarjeta-producto__nombre">${escaparHTML(producto.nombre)}</h3>
     ${conDesde ? '<p class="tarjeta-producto__desde">Desde</p>' : ""}
     <p class="precio">${precioHTML(precio)}</p>
+    ${htmlPrecioPorUnidad(precio, producto.presentacion)}
     ${detalle ? `<p class="tarjeta-producto__detalle">${escaparHTML(detalle)}</p>` : ""}
     <a class="btn btn--linea btn--bloque btn--chico" href="${rutaDetalleProducto(producto.id)}">Ver producto</a>`;
 

@@ -2,7 +2,7 @@
 // y productos similares (los similares se eligen por la marca del producto).
 // Se abre con detalle-producto.html?id=<id del producto>.
 
-import { RUTAS } from "../core/constants.js";
+import { TIPOS_REPORTE, RUTAS } from "../core/constants.js";
 import { normalizarTexto } from "../core/validators.js";
 import { manejarError } from "../core/errores.js";
 import { verificarConfiguracion } from "../services/authService.js";
@@ -16,13 +16,15 @@ import {
   mostrarError,
   mostrarVacio
 } from "../ui/feedback.js";
-import { crearImagenProducto, crearBotonFavorito, crearTarjetaResumen } from "../ui/components/tarjetaProducto.js";
+import { crearImagenProducto, crearBotonFavorito, crearTarjetaResumen, htmlPrecioPorUnidad } from "../ui/components/tarjetaProducto.js";
 import { rutaPerfilComercio, htmlNoValidado, htmlAvatarComercio } from "../ui/components/tarjetaComercio.js";
+import { precioPorUnidad } from "../services/preciosService.js";
 import { prepararBarraPublica } from "../guards/sessionGuard.js";
 import { montarOpiniones } from "../ui/components/opiniones.js";
 import { registrarProductoVisto } from "../services/historialService.js";
+import { crearBotonReportar } from "../ui/components/reportar.js";
 
-const CANTIDAD_SIMILARES = 5;
+const CANTIDAD_SIMILARES = 6;
 const $ = (id) => document.getElementById(id);
 
 const elementos = {
@@ -71,6 +73,7 @@ function renderizarProducto(resumen) {
       : ""}
     <div class="opiniones__reacciones" id="reacciones-producto"></div>
     <div class="detalle__chips">
+      ${producto.enRevision ? '<span class="chip chip--pendiente" title="Recibió varios reportes y el equipo de SENDA lo está revisando">En revisión</span>' : ""}
       ${descuento > 0 ? '<span class="chip chip--rechazado">En oferta</span>' : ""}
       <span class="chip ${hayStock ? "chip--aprobado" : "chip--pendiente"}">${hayStock ? "Disponible" : "Sin stock por ahora"}</span>
     </div>
@@ -82,6 +85,7 @@ function renderizarProducto(resumen) {
               <span class="precio precio--grande">${precioHTML(mejor.precio.precioFinal)}</span>
               ${descuento > 0 ? `<span class="precio-anterior">${precioTexto(mejor.precio.precioOriginal)}</span><span class="fila-producto__descuento">-${descuento}%</span>` : ""}
             </p>
+            ${htmlPrecioPorUnidad(mejor.precio.precioFinal, producto.presentacion, "mejor-precio__unidad")}
             <p class="mejor-precio__vendedor">Vendido por <strong>${escaparHTML(mejor.comercio.nombre)}</strong> · En stock</p>
             ${htmlNoValidado(mejor.comercio)}
             <a class="btn btn--oscuro btn--chico" href="${rutaPerfilComercio(mejor.comercio.id)}">Ver comercio</a>
@@ -91,8 +95,26 @@ function renderizarProducto(resumen) {
     ${ahorro > 0 ? `<p class="detalle__ahorro">Ahorrás hasta <strong>${precioTexto(ahorro)}</strong> eligiendo el comercio más barato.</p>` : ""}`;
 
   info.querySelector(".detalle__titulo").append(crearBotonFavorito(producto, "boton-favorito--en-linea"));
+  // Reportar el producto (datos, imagen o producto no apto). Los productos viejos sin creador no se reportan.
+  if (producto.creadorId) {
+    const pie = document.createElement("p");
+    pie.className = "detalle__reportar";
+    pie.append(
+      crearBotonReportar(
+        { tipo: TIPOS_REPORTE.PRODUCTO, objetivoId: producto.id, objetivoNombre: producto.nombre, duenoId: producto.creadorId },
+        { texto: "Reportar producto" }
+      )
+    );
+    info.append(pie);
+  }
   tarjeta.append(columnaImagen, info);
   elementos.contenido.replaceChildren(tarjeta);
+}
+
+// Precio por kilo o por litro debajo del precio de cada comercio.
+function textoUnidad(precio, presentacion) {
+  const unidad = precioPorUnidad(precio, presentacion);
+  return unidad ? `<span class="fila-comercio__unidad">${precioTexto(unidad.valor)} por ${unidad.unidad}</span>` : "";
 }
 
 function renderizarComercios(resumen) {
@@ -112,11 +134,41 @@ function renderizarComercios(resumen) {
             <p class="fila-comercio__detalle">${textoActualizacion(precio.fechaActualizacion)}</p>
           </div>
           <span class="chip ${precio.disponible ? "chip--aprobado" : "chip--rechazado"}">${precio.disponible ? "En stock" : "Sin stock"}</span>
-          <span class="${esMejor ? "pildora-precio" : "fila-comercio__precio"}">${precioTexto(precio.precioFinal)}</span>
+          <span class="fila-comercio__precios">
+            <span class="${esMejor ? "pildora-precio" : "fila-comercio__precio"}">${precioTexto(precio.precioFinal)}</span>
+            ${textoUnidad(precio.precioFinal, resumen.producto.presentacion)}
+            ${precio.enRevision ? '<span class="insignia-revision" title="Recibió varios reportes y el equipo de SENDA lo está revisando">En revisión</span>' : ""}
+          </span>
         </li>`;
     })
     .join("");
+  // "Reportar precio" en cada comercio: precio falso, no coincide con el local, etc.
+  [...elementos.listaDonde.children].forEach((fila, i) => {
+    const { precio, comercio } = resumen.ofertas[i];
+    fila.append(
+      crearBotonReportar({
+        tipo: TIPOS_REPORTE.PRECIO,
+        objetivoId: precio.id,
+        objetivoNombre: `${resumen.producto.nombre} en ${comercio.nombre}`,
+        duenoId: comercio.id,
+        comercioId: comercio.id
+      })
+    );
+  });
   elementos.seccionComercios.hidden = false;
+}
+
+// Si la persona ocultó comercios, se le recuerda que no aparecen en la comparación.
+function avisarComerciosOcultos(ocultos) {
+  $("aviso-ocultos")?.remove();
+  if (!ocultos?.length) return;
+  const aviso = document.createElement("p");
+  aviso.className = "mensaje mensaje--info";
+  aviso.id = "aviso-ocultos";
+  aviso.innerHTML = `Ocultaste ${ocultos.length === 1 ? "1 comercio" : `${ocultos.length} comercios`} de tus comparaciones (${ocultos
+    .map((c) => escaparHTML(c.nombre))
+    .join(", ")}). Podés volver a mostrarlos desde <a href="${RUTAS.PERFIL_USUARIO}#configuracion">Configuración</a>.`;
+  elementos.listaDonde.before(aviso);
 }
 
 function renderizarSimilares(resumen, catalogo) {
@@ -147,6 +199,7 @@ async function cargar() {
     renderizarProducto(resumen);
     registrarProductoVisto(productoId).catch((error) => manejarError(error, "Historial de productos vistos"));
     renderizarComercios(resumen);
+    avisarComerciosOcultos(catalogo.ocultosPorVos);
     renderizarSimilares(resumen, catalogo);
     elementos.zonaVerComentarios.hidden = false;
     montarOpiniones(

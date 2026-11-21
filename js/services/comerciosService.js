@@ -17,6 +17,7 @@ import { db } from "../config/firebase.js";
 import { prepararImagen } from "./imagenesService.js";
 import { COLECCIONES, ROLES } from "../core/constants.js";
 import { normalizarTexto } from "../core/validators.js";
+import { agregarAListaEnLote } from "./bloqueosService.js";
 
 export async function obtenerComercio(comercioId) {
   const snapshot = await getDoc(doc(db, COLECCIONES.COMERCIOS, comercioId));
@@ -29,10 +30,12 @@ export async function listarComercios() {
 }
 
 // Guarda los datos del perfil. Con merge se crea el documento si todavía no existe.
-export function guardarComercio(comercioId, { nombre, direccion, telefono, horario }) {
+export function guardarComercio(comercioId, { nombre, direccion, telefono, horario, localidad }) {
+  const datos = { nombre, direccion, telefono, horario };
+  if (localidad) datos.localidad = localidad;
   return setDoc(
     doc(db, COLECCIONES.COMERCIOS, comercioId),
-    { nombre, direccion, telefono, horario },
+    datos,
     { merge: true }
   );
 }
@@ -50,15 +53,18 @@ export async function existeComercioConNombre(nombre, excluirId = null) {
 // Se guarda en lote para que no quede una cuenta sin comercio o un comercio sin cuenta.
 // correo: el de la cuenta de Authentication. Se guarda aparte, en comerciosPrivados,
 // para que el administrador lo vea sin que quede público en el perfil del comercio.
-export async function crearSolicitudComercio(uid, { nombre, dueno, direccion, telefono, correo = "" }) {
+// bloqueada: el correo o el teléfono están en la lista de bloqueo (ver bloqueosService.js).
+// La solicitud se guarda igual, pero la cuenta queda "rechazada" desde el principio.
+export async function crearSolicitudComercio(uid, { nombre, dueno, direccion, telefono, localidad = "", correo = "", bloqueada = false }) {
   const lote = writeBatch(db);
   if (correo) lote.set(doc(db, COLECCIONES.COMERCIOS_PRIVADOS, uid), { correo });
-  lote.set(doc(db, COLECCIONES.USUARIOS, uid), { rol: ROLES.PENDIENTE });
+  lote.set(doc(db, COLECCIONES.USUARIOS, uid), { rol: bloqueada ? ROLES.RECHAZADO : ROLES.PENDIENTE });
   lote.set(doc(db, COLECCIONES.COMERCIOS, uid), {
     nombre: nombre.trim(),
     dueno: dueno.trim(),
     direccion: direccion.trim(),
     telefono: telefono.trim(),
+    localidad,
     horario: ""
   });
   await lote.commit();
@@ -105,10 +111,14 @@ export async function sincronizarCorreoComercio(comercioId, correo) {
 // SDK de administrador en un servidor. Se borra a mano desde la consola de Firebase.
 const LIMITE_LOTE = 450;
 
-export async function eliminarCuentaComercio(comercioId) {
-  const [precios, notificaciones] = await Promise.all([
+// El correo y el teléfono de la cuenta quedan en la lista de bloqueo permanente: si alguien se
+// registra de nuevo con alguno de los dos, la cuenta nace bloqueada (ver bloqueosService.js).
+export async function eliminarCuentaComercio(comercioId, motivo = "") {
+  const [precios, notificaciones, comercio, correo] = await Promise.all([
     getDocs(query(collection(db, COLECCIONES.PRECIOS), where("comercioId", "==", comercioId))),
-    getDocs(query(collection(db, COLECCIONES.NOTIFICACIONES), where("comercioId", "==", comercioId)))
+    getDocs(query(collection(db, COLECCIONES.NOTIFICACIONES), where("comercioId", "==", comercioId))),
+    obtenerComercio(comercioId),
+    obtenerCorreoComercio(comercioId).catch(() => "")
   ]);
 
   // Productos que solo vende este comercio.
@@ -132,6 +142,7 @@ export async function eliminarCuentaComercio(comercioId) {
     await lote.commit();
   }
   const ultimo = writeBatch(db);
+  agregarAListaEnLote(ultimo, { correo, telefono: comercio?.telefono ?? "", motivo: motivo || "Cuenta de comercio eliminada" });
   ultimo.delete(doc(db, COLECCIONES.COMERCIOS, comercioId));
   ultimo.delete(doc(db, COLECCIONES.COMERCIOS_PRIVADOS, comercioId));
   ultimo.delete(doc(db, COLECCIONES.USUARIOS, comercioId));

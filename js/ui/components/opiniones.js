@@ -13,8 +13,13 @@
 //   buenas opiniones a sí mismo ni malas a la competencia. Los visitantes ven todo, pero para opinar
 //   necesitan una cuenta, así cada opinión tiene un autor y se puede moderar.
 //   El autor puede borrar sus comentarios y el administrador puede borrar los que no cumplan las normas.
+//
+// Moderación:
+//   Cada comentario ajeno tiene el botón "Reportar". Con 3 reportes muestra la etiqueta "En revisión".
+//   Lo que el equipo ocultó no se muestra, y tampoco los comentarios de cuentas bloqueadas por SENDA
+//   o por la propia persona (ver bloqueosService.js).
 
-import { ROLES, RUTAS, LIMITES, REACCIONES } from "../../core/constants.js";
+import { ROLES, RUTAS, LIMITES, REACCIONES, TIPOS_REPORTE } from "../../core/constants.js";
 import { validarComentario } from "../../core/validators.js";
 import { manejarError } from "../../core/errores.js";
 import { escaparHTML, iniciales, textoFecha, mostrarAviso, confirmar, mostrarCargando } from "../feedback.js";
@@ -27,6 +32,9 @@ import {
   publicarComentario,
   eliminarComentario
 } from "../../services/opinionesService.js";
+import { mapaDeRevisiones, estadoDe } from "../../services/reportesService.js";
+import { obtenerOcultos } from "../../services/bloqueosService.js";
+import { crearBotonReportar } from "./reportar.js";
 
 const ICONOS = {
   [REACCIONES.ME_GUSTA]:
@@ -50,6 +58,9 @@ export async function montarOpiniones(elementos, { producto, comercios }) {
     reacciones: null,
     comentarios: [],
     autores: new Map(),
+    revisiones: new Map(),
+    // Cuentas personales que la persona bloqueó: sus comentarios no se le muestran.
+    bloqueadas: [],
     comercioPorId: new Map(comercios.map((c) => [c.id, c]))
   };
   const esCliente = estado.cuenta?.rol === ROLES.CLIENTE;
@@ -148,12 +159,20 @@ export async function montarOpiniones(elementos, { producto, comercios }) {
       boton.disabled = true;
       try {
         const comercioId = formulario.querySelector("#comentario-comercio").value;
-        const id = await publicarComentario({
+        const { id, enRevision } = await publicarComentario({
           productoId: producto.id,
           comercioId,
           uid: estado.cuenta.uid,
-          texto: texto.value
+          texto: texto.value,
+          productoNombre: producto.nombre
         });
+        if (enRevision) {
+          // Tiene palabras no permitidas: no se muestra hasta que el equipo lo revise.
+          texto.value = "";
+          contador.textContent = "0";
+          mostrarAviso("Tu comentario quedó oculto y en revisión porque tiene palabras no permitidas. El equipo de SENDA lo va a revisar.", "error");
+          return;
+        }
         estado.comentarios.unshift({ id, productoId: producto.id, comercioId, clienteId: estado.cuenta.uid, texto: texto.value.trim(), fecha: null });
         if (!estado.autores.has(estado.cuenta.uid)) {
           estado.autores = new Map([...estado.autores, ...(await obtenerClientes([estado.cuenta.uid]))]);
@@ -180,14 +199,31 @@ export async function montarOpiniones(elementos, { producto, comercios }) {
     return estado.cuenta.rol === ROLES.ADMIN || comentario.clienteId === estado.cuenta.uid;
   }
 
+  // Comentarios que se muestran: sin los ocultados por SENDA, sin los de cuentas ocultadas o
+  // bloqueadas por SENDA y sin los de cuentas que la persona bloqueó.
+  function comentariosVisibles() {
+    return estado.comentarios.filter(
+      (c) =>
+        !estadoDe(estado.revisiones, TIPOS_REPORTE.COMENTARIO, c.id).oculto &&
+        !estadoDe(estado.revisiones, TIPOS_REPORTE.CUENTA, c.clienteId).oculto &&
+        !estado.bloqueadas.includes(c.clienteId)
+    );
+  }
+
   function renderizarComentarios() {
-    const cantidad = estado.comentarios.length;
+    const visibles = comentariosVisibles();
+    const deBloqueadas = estado.comentarios.filter((c) => estado.bloqueadas.includes(c.clienteId)).length;
+    const cantidad = visibles.length;
     elementos.cantidad.textContent = `(${cantidad})`;
+    const notaBloqueadas = deBloqueadas
+      ? `<li class="comentario comentario--vacio">No se muestran ${deBloqueadas === 1 ? "1 comentario" : `${deBloqueadas} comentarios`} de cuentas que bloqueaste. Podés desbloquearlas desde Configuración.</li>`
+      : "";
     if (cantidad === 0) {
-      elementos.lista.innerHTML = '<li class="comentario comentario--vacio">Todavía no hay comentarios sobre este producto.</li>';
+      elementos.lista.innerHTML = `<li class="comentario comentario--vacio">Todavía no hay comentarios sobre este producto.</li>${notaBloqueadas}`;
       return;
     }
-    elementos.lista.replaceChildren(...estado.comentarios.map(crearComentario));
+    elementos.lista.replaceChildren(...visibles.map(crearComentario));
+    if (notaBloqueadas) elementos.lista.insertAdjacentHTML("beforeend", notaBloqueadas);
   }
 
   function crearComentario(comentario) {
@@ -207,6 +243,7 @@ export async function montarOpiniones(elementos, { producto, comercios }) {
         <p class="comentario__cabecera">
           ${autor ? `<a class="comentario__autor" href="${rutaAutor}" title="Ver el perfil de ${escaparHTML(usuario)}">${escaparHTML(usuario)}</a>` : `<strong>${escaparHTML(usuario)}</strong>`}
           <span class="comentario__fecha">${escaparHTML(textoFecha(comentario.fecha))}</span>
+          ${estadoDe(estado.revisiones, TIPOS_REPORTE.COMENTARIO, comentario.id).enRevision ? '<span class="insignia-revision" title="Recibió varios reportes y el equipo de SENDA lo está revisando">En revisión</span>' : ""}
         </p>
         ${comercio ? `<p class="comentario__comercio">Sobre ${escaparHTML(comercio.nombre)}</p>` : ""}
         <p class="comentario__texto">${escaparHTML(comentario.texto)}</p>
@@ -222,6 +259,21 @@ export async function montarOpiniones(elementos, { producto, comercios }) {
       boton.innerHTML = ICONOS.borrar;
       boton.addEventListener("click", () => borrar(comentario, propio));
       item.append(boton);
+    }
+    // Reportar: en los comentarios de otras personas.
+    if (comentario.clienteId !== estado.cuenta?.uid && estado.cuenta?.rol !== ROLES.ADMIN) {
+      item.append(
+        crearBotonReportar(
+          {
+            tipo: TIPOS_REPORTE.COMENTARIO,
+            objetivoId: comentario.id,
+            objetivoNombre: `${usuario}: ${comentario.texto.length > 70 ? `${comentario.texto.slice(0, 67)}...` : comentario.texto}`,
+            duenoId: comentario.clienteId,
+            comercioId: comentario.comercioId || ""
+          },
+          { clase: "comentario__reportar" }
+        )
+      );
     }
     return item;
   }
@@ -251,12 +303,16 @@ export async function montarOpiniones(elementos, { producto, comercios }) {
   mostrarCargando(elementos.lista, "Cargando opiniones...");
   try {
     const uid = esCliente ? estado.cuenta.uid : null;
-    const [reacciones, comentarios] = await Promise.all([
+    const [reacciones, comentarios, revisiones, ocultos] = await Promise.all([
       obtenerReacciones(producto.id, uid),
-      listarComentarios(producto.id)
+      listarComentarios(producto.id),
+      mapaDeRevisiones(),
+      esCliente ? obtenerOcultos(uid).catch(() => ({ cuentas: [] })) : { cuentas: [] }
     ]);
     estado.reacciones = reacciones;
     estado.comentarios = comentarios;
+    estado.revisiones = revisiones;
+    estado.bloqueadas = ocultos.cuentas;
     estado.autores = await obtenerClientes(comentarios.map((c) => c.clienteId));
     renderizarReacciones();
     renderizarZonaComentar();

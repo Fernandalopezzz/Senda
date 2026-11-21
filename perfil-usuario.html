@@ -138,6 +138,12 @@
             </button>
           </div>
 
+          <div class="ajustes tarjeta" id="ajustes-ocultos">
+            <h2 class="ajustes__titulo">Comercios ocultos y cuentas bloqueadas</h2>
+            <p class="ajustes__ayuda">Los comercios ocultos no aparecen en tus comparaciones. De las cuentas bloqueadas no ves sus comentarios.</p>
+            <ul class="lista-ocultos" id="lista-ocultos"></ul>
+          </div>
+
           <div class="cuenta-ajustes tarjeta">
             <h2 class="ajustes__titulo">Cuenta</h2>
             <p class="mensaje mensaje--info" id="aviso-google" hidden>Tu cuenta entra con Google. El correo y la contraseña se administran desde tu cuenta de Google.</p>
@@ -216,6 +222,11 @@
         <div class="campo">
           <label class="campo__etiqueta" for="input-nombre">Nombre (privado)</label>
           <input class="campo__control" id="input-nombre" type="text" maxlength="60" autocomplete="name" required>
+          <p class="campo__error" aria-live="polite"></p>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="input-localidad">Localidad</label>
+          <select class="campo__control" id="input-localidad"></select>
           <p class="campo__error" aria-live="polite"></p>
         </div>
         <div class="campo">

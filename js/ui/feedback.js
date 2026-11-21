@@ -169,33 +169,57 @@ export function prepararModal(dialogo) {
   });
 }
 
-// Pide confirmación con un <dialog> propio. Devuelve una promesa con true o false.
-export function confirmar({ titulo, texto, textoAceptar = "Confirmar", peligro = false }) {
+// Tarjeta de confirmación. Devuelve true si se acepta y false si se cancela.
+// motivo: { etiqueta, obligatorio } agrega un campo de texto para explicar la decisión. En ese caso
+// devuelve el texto escrito (o "" si no es obligatorio y quedó vacío) y null si se cancela.
+// grande: tarjeta más grande, para acciones que la persona tiene que leer con atención.
+export function confirmar({ titulo, texto, textoAceptar = "Confirmar", peligro = false, motivo = null, grande = false }) {
   return new Promise((resolve) => {
     const dialogo = document.createElement("dialog");
-    dialogo.className = "modal modal--chico";
+    dialogo.className = `modal ${grande ? "modal--confirmacion-grande" : "modal--chico"}`;
     dialogo.innerHTML = `
-      <div class="modal__contenido">
+      <form class="modal__contenido" method="dialog" novalidate>
         <h2 class="modal__titulo">${escaparHTML(titulo)}</h2>
         <p class="modal__texto">${escaparHTML(texto)}</p>
+        ${
+          motivo
+            ? `<div class="campo">
+                <label class="campo__etiqueta" for="motivo-confirmacion">${escaparHTML(motivo.etiqueta ?? "Motivo")}${motivo.obligatorio ? "" : " (opcional)"}</label>
+                <textarea class="campo__control" id="motivo-confirmacion" rows="3" maxlength="300"></textarea>
+                <p class="campo__error" aria-live="polite"></p>
+              </div>`
+            : ""
+        }
         <div class="modal__acciones">
           <button type="button" class="btn btn--linea" value="no">Cancelar</button>
-          <button type="button" class="btn ${peligro ? "btn--peligro" : "btn--primario"}" value="si">${escaparHTML(textoAceptar)}</button>
+          <button type="submit" class="btn ${peligro ? "btn--peligro" : "btn--primario"}" value="si">${escaparHTML(textoAceptar)}</button>
         </div>
-      </div>`;
+      </form>`;
     document.body.append(dialogo);
-    let respuesta = false;
-    dialogo.querySelectorAll("button").forEach((boton) =>
-      boton.addEventListener("click", () => {
-        respuesta = boton.value === "si";
-        dialogo.close();
-      })
-    );
+    const campo = dialogo.querySelector("#motivo-confirmacion");
+    let respuesta = motivo ? null : false;
+    dialogo.querySelector("button[value=no]").addEventListener("click", () => dialogo.close());
+    dialogo.querySelector("form").addEventListener("submit", (evento) => {
+      evento.preventDefault();
+      if (motivo) {
+        const valor = campo.value.trim();
+        if (motivo.obligatorio && valor.length < 3) {
+          marcarErrorCampo(campo, "Escribí el motivo (al menos 3 letras).");
+          campo.focus();
+          return;
+        }
+        respuesta = valor;
+      } else {
+        respuesta = true;
+      }
+      dialogo.close();
+    });
     dialogo.addEventListener("close", () => {
       dialogo.remove();
       resolve(respuesta);
     });
     dialogo.showModal();
+    campo?.focus();
   });
 }
 
@@ -223,4 +247,12 @@ export function prepararBuscador({ formulario, input, limpiar, error }, { valida
     limpiar.hidden = true;
     input.focus();
   });
+}
+
+// Completa un <select> con las localidades. Con placeholder agrega una primera opción vacía.
+export function llenarSelectorLocalidad(select, localidades, { valor = "", placeholder = "" } = {}) {
+  select.innerHTML =
+    (placeholder ? `<option value="">${escaparHTML(placeholder)}</option>` : "") +
+    localidades.map((localidad) => `<option value="${escaparHTML(localidad)}">${escaparHTML(localidad)}</option>`).join("");
+  select.value = valor;
 }

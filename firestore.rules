@@ -25,6 +25,126 @@ service cloud.firestore {
       return autenticado() && rolActual() == 'admin';
     }
 
+    // ---------- Empleados ----------
+    // Cuenta del equipo creada por el administrador. Solo puede actuar si está habilitada (activo)
+    // y únicamente en las tareas que el administrador le marcó en permisos.
+    function rutaEmpleado() {
+      return /databases/$(database)/documents/empleados/$(request.auth.uid);
+    }
+
+    function esEmpleadoActivo() {
+      return autenticado() && rolActual() == 'empleado'
+        && exists(rutaEmpleado()) && get(rutaEmpleado()).data.activo == true;
+    }
+
+    function empleadoPuede(permiso) {
+      return esEmpleadoActivo() && get(rutaEmpleado()).data.permisos.get(permiso, false) == true;
+    }
+
+    // Administrador o empleado habilitado.
+    function esEquipo() {
+      return esAdmin() || esEmpleadoActivo();
+    }
+
+    function empleadoValido(datos) {
+      return datos.keys().hasOnly(['nombre', 'correo', 'permisos', 'activo', 'fechaAlta'])
+        && datos.keys().hasAll(['nombre', 'correo', 'permisos', 'activo', 'fechaAlta'])
+        && texto(datos.nombre, 2, 60)
+        && texto(datos.correo, 3, 120)
+        && datos.activo is bool
+        && datos.permisos is map
+        && datos.permisos.keys().hasOnly(['verPendientes', 'validar', 'bloquear', 'moderar']);
+    }
+
+    // Comprueba que el cambio de estado de un comercio se registra en el historial de moderación en
+    // la misma escritura: la acción tiene que ser nueva, de quien escribe y sobre esa cuenta.
+    function accionRegistrada(uid) {
+      let ruta = /databases/$(database)/documents/historialModeracion/$(request.resource.data.historialId);
+      return request.resource.data.historialId is string
+        && !exists(ruta)
+        && existsAfter(ruta)
+        && getAfter(ruta).data.actorId == request.auth.uid
+        && getAfter(ruta).data.objetivoId == uid;
+    }
+
+    // Administrador o empleado con el permiso "moderar": atiende la lista de revisión.
+    function esModerador() {
+      return esAdmin() || empleadoPuede('moderar');
+    }
+
+    // ---------- Lista de bloqueo ----------
+    // Correo o teléfono de una cuenta eliminada por el administrador (ver listaBloqueo).
+    function correoEnLista() {
+      return request.auth.token.email is string
+        && exists(/databases/$(database)/documents/listaBloqueo/$('correo_' + request.auth.token.email.lower()));
+    }
+
+    // Teléfono del comercio que se registra en la misma escritura, solo con números.
+    function telefonoEnLista(uid) {
+      let ruta = /databases/$(database)/documents/comercios/$(uid);
+      return existsAfter(ruta)
+        && getAfter(ruta).data.get('telefono', '').replace('[^0-9]', '').size() >= 6
+        && exists(/databases/$(database)/documents/listaBloqueo/$('telefono_' + getAfter(ruta).data.telefono.replace('[^0-9]', '')));
+    }
+
+    function enListaDeBloqueo(uid) {
+      return correoEnLista() || telefonoEnLista(uid);
+    }
+
+    // ---------- Reportes ----------
+    // Reportan las cuentas personales y los comercios validados.
+    function puedeReportar() {
+      return esCliente() || esComercioAprobado();
+    }
+
+    // El dueño que figura en la revisión tiene que ser el dueño real del contenido.
+    function duenoReal(datos) {
+      return (datos.tipo == 'cuenta' && datos.duenoId == datos.objetivoId)
+        || (datos.tipo == 'comentario'
+          && get(/databases/$(database)/documents/comentarios/$(datos.objetivoId)).data.clienteId == datos.duenoId)
+        || (datos.tipo == 'producto'
+          && get(/databases/$(database)/documents/productos/$(datos.objetivoId)).data.get('creadorId', '') == datos.duenoId)
+        || (datos.tipo == 'precio'
+          && get(/databases/$(database)/documents/precios/$(datos.objetivoId)).data.comercioId == datos.duenoId);
+    }
+
+    // Igual, pero con el contenido tal como queda después de la escritura: el marcado automático se
+    // guarda en la misma escritura que crea el comentario o el producto.
+    function duenoRealDespues(datos) {
+      return (datos.tipo == 'comentario'
+          && getAfter(/databases/$(database)/documents/comentarios/$(datos.objetivoId)).data.clienteId == datos.duenoId)
+        || (datos.tipo == 'producto'
+          && getAfter(/databases/$(database)/documents/productos/$(datos.objetivoId)).data.get('creadorId', '') == datos.duenoId);
+    }
+
+    function revisionValida(datos) {
+      return datos.keys().hasOnly(['tipo', 'objetivoId', 'objetivoNombre', 'duenoId', 'comercioId', 'cantidadReportes',
+                                   'motivos', 'ofensivo', 'oculto', 'enRevision', 'estado', 'motivoAutomatico',
+                                   'resolucion', 'fechaActualizacion'])
+        && datos.tipo in ['comentario', 'producto', 'precio', 'cuenta']
+        && texto(datos.objetivoId, 1, 128)
+        && texto(datos.objetivoNombre, 0, 160)
+        && texto(datos.duenoId, 1, 128)
+        && texto(datos.comercioId, 0, 128)
+        && datos.cantidadReportes is int && datos.cantidadReportes >= 0
+        && datos.motivos is map
+        && datos.ofensivo is bool && datos.oculto is bool && datos.enRevision is bool
+        && datos.estado in ['abierta', 'resuelta', 'pedido-bloqueo']
+        && texto(datos.motivoAutomatico, 0, 200)
+        && texto(datos.resolucion, 0, 400)
+        && datos.fechaActualizacion == request.time;
+    }
+
+    // El reporte de quien escribe sobre esta revisión: nuevo y guardado en la misma escritura.
+    function reporteNuevo(revisionId) {
+      let ruta = /databases/$(database)/documents/reportes/$(revisionId + '_' + request.auth.uid);
+      return !exists(ruta) && existsAfter(ruta);
+    }
+
+    function motivoDelReporte(revisionId) {
+      return getAfter(/databases/$(database)/documents/reportes/$(revisionId + '_' + request.auth.uid)).data.motivo;
+    }
+
     // Cuenta personal de un cliente: guarda favoritos, opina y comenta. No publica precios.
     function esCliente() {
       return autenticado() && rolActual() == 'cliente';
@@ -40,8 +160,10 @@ service cloud.firestore {
     }
 
     function comercioValido(datos) {
-      return datos.keys().hasOnly(['nombre', 'dueno', 'direccion', 'telefono', 'horario', 'foto', 'fondo'])
+      return datos.keys().hasOnly(['nombre', 'dueno', 'direccion', 'telefono', 'horario', 'localidad', 'foto', 'fondo'])
         && texto(datos.nombre, 2, 120)
+        // Localidad de Santa Cruz elegida de la lista fija (ver LOCALIDADES en constants.js).
+        && (!('localidad' in datos) || texto(datos.localidad, 0, 60))
         && (!('dueno' in datos) || texto(datos.dueno, 0, 120))
         && (!('direccion' in datos) || texto(datos.direccion, 0, 120))
         && (!('telefono' in datos) || texto(datos.telefono, 0, 25))
@@ -96,21 +218,47 @@ service cloud.firestore {
 
       // Registro: un comercio nuevo siempre queda "pendiente" y una cuenta personal es "cliente".
       // Nunca puede darse a sí misma el rol "comercio" o "admin".
+      // Si el correo o el teléfono están en la lista de bloqueo, la cuenta nace bloqueada:
+      // "rechazado" si es un comercio y "bloqueado" si es una cuenta personal.
       allow create: if autenticado()
         && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['rol'])
-        && request.resource.data.rol in ['pendiente', 'cliente'];
+        && (
+          (request.resource.data.rol in ['pendiente', 'cliente'] && !enListaDeBloqueo(uid))
+          || (request.resource.data.rol in ['rechazado', 'bloqueado'] && enListaDeBloqueo(uid))
+        );
 
       // Una cuenta personal puede eliminarse a sí misma (derecho de supresión de sus datos).
       allow delete: if autenticado()
         && request.auth.uid == uid
         && resource.data.rol == 'cliente';
 
-      // Solo un administrador valida comercios, y solo puede cambiar el rol.
+      // El administrador crea las cuentas de empleado (la cuenta de Authentication se crea antes).
+      allow create: if esAdmin()
+        && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['rol'])
+        && request.resource.data.rol == 'empleado';
+
+      // El administrador valida o bloquea comercios y bloquea o desbloquea cuentas personales.
+      // Solo cambia el rol y la referencia a la acción del historial. Un comercio no pasa a ser
+      // cuenta personal ni al revés.
       allow update: if esAdmin()
         && request.auth.uid != uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol'])
-        && request.resource.data.rol in ['pendiente', 'comercio', 'rechazado'];
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol', 'historialId'])
+        && (
+          (resource.data.rol in ['pendiente', 'comercio', 'rechazado'] && request.resource.data.rol in ['pendiente', 'comercio', 'rechazado'])
+          || (resource.data.rol in ['cliente', 'bloqueado'] && request.resource.data.rol in ['cliente', 'bloqueado'])
+        );
+
+      // Un empleado habilitado valida (permiso "validar") o bloquea (permiso "bloquear") comercios,
+      // siempre dejando la acción en el historial. No puede eliminar cuentas.
+      allow update: if esEmpleadoActivo()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol', 'historialId'])
+        && accionRegistrada(uid)
+        && (
+          (resource.data.rol in ['pendiente', 'rechazado'] && request.resource.data.rol == 'comercio' && empleadoPuede('validar'))
+          || (resource.data.rol in ['pendiente', 'comercio'] && request.resource.data.rol == 'rechazado' && empleadoPuede('bloquear'))
+        );
 
       // El administrador elimina cuentas de comercio solo si antes las bloqueó.
       allow delete: if esAdmin() && resource.data.rol == 'rechazado';
@@ -136,10 +284,10 @@ service cloud.firestore {
 
     // ---------- comerciosPrivados ----------
     // Correo de cada cuenta de comercio (ID = uid). No es público: lo leen el propio comercio y el
-    // administrador, que lo necesita para contactar a quien pidió la cuenta. Solo se puede guardar
+    // equipo de SENDA (administrador y empleados), que lo necesita para contactar a quien pidió la cuenta. Solo se puede guardar
     // el correo real de la sesión (request.auth.token.email), así nadie carga uno ajeno.
     match /comerciosPrivados/{comercioId} {
-      allow read: if autenticado() && (request.auth.uid == comercioId || esAdmin());
+      allow read: if autenticado() && (request.auth.uid == comercioId || esEquipo());
       allow create, update: if autenticado()
         && request.auth.uid == comercioId
         && request.resource.data.keys().hasOnly(['correo'])
@@ -230,8 +378,9 @@ service cloud.firestore {
       allow read: if autenticado() && request.auth.uid == clienteId;
       allow create, update: if autenticado()
         && request.auth.uid == clienteId
-        && request.resource.data.keys().hasOnly(['nombre'])
-        && texto(request.resource.data.nombre, 2, 60);
+        && request.resource.data.keys().hasOnly(['nombre', 'localidad'])
+        && texto(request.resource.data.nombre, 2, 60)
+        && (!('localidad' in request.resource.data) || texto(request.resource.data.localidad, 0, 60));
       allow delete: if esCliente() && request.auth.uid == clienteId;
     }
 
@@ -282,7 +431,7 @@ service cloud.firestore {
         && texto(request.resource.data.texto, 3, 300)
         && request.resource.data.fecha == request.time;
       allow update: if false;
-      allow delete: if esAdmin() || (esCliente() && resource.data.clienteId == request.auth.uid);
+      allow delete: if esModerador() || (esCliente() && resource.data.clienteId == request.auth.uid);
     }
 
     // ---------- notificaciones ----------
@@ -309,6 +458,206 @@ service cloud.firestore {
 
       // Se borran junto con la cuenta del comercio que los recibió.
       allow delete: if esAdmin();
+    }
+
+    // ---------- empleados ----------
+    // Datos de cada empleado (ID = uid): nombre, correo, permisos y si está habilitado.
+    // Los lee el administrador y el propio empleado. Solo el administrador los crea y los cambia.
+    // No se borran: se deshabilitan, así el historial sigue mostrando quién hizo cada acción.
+    match /empleados/{empleadoId} {
+      allow read: if esAdmin() || (autenticado() && request.auth.uid == empleadoId);
+      allow create: if esAdmin()
+        && empleadoValido(request.resource.data)
+        && request.resource.data.activo == true
+        && request.resource.data.fechaAlta == request.time
+        && getAfter(/databases/$(database)/documents/usuarios/$(empleadoId)).data.rol == 'empleado';
+      allow update: if esAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['permisos', 'activo'])
+        && empleadoValido(request.resource.data);
+      allow delete: if false;
+    }
+
+    // ---------- historialModeracion ----------
+    // Una acción del equipo por documento. Solo la lee el administrador. No se edita ni se borra.
+    // Quién la hizo se toma de la sesión: nadie puede firmar con el nombre o el correo de otro.
+    match /historialModeracion/{accionId} {
+      allow read: if esAdmin();
+      allow create: if esEquipo()
+        && request.resource.data.keys().hasOnly(['actorId', 'actorNombre', 'actorCorreo', 'accion', 'objetivoTipo',
+                                                 'objetivoId', 'objetivoNombre', 'motivo', 'origen', 'fecha'])
+        && request.resource.data.keys().hasAll(['actorId', 'actorNombre', 'actorCorreo', 'accion', 'objetivoTipo',
+                                                'objetivoId', 'objetivoNombre', 'motivo', 'origen', 'fecha'])
+        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.actorCorreo == request.auth.token.email
+        && ((esAdmin() && request.resource.data.actorNombre == 'Administración')
+          || (esEmpleadoActivo() && request.resource.data.actorNombre == get(rutaEmpleado()).data.nombre))
+        && texto(request.resource.data.accion, 2, 60)
+        && texto(request.resource.data.objetivoTipo, 2, 30)
+        && texto(request.resource.data.objetivoId, 1, 128)
+        && texto(request.resource.data.objetivoNombre, 0, 160)
+        && texto(request.resource.data.motivo, 0, 300)
+        && texto(request.resource.data.origen, 2, 60)
+        && request.resource.data.fecha == request.time;
+      allow update, delete: if false;
+    }
+
+    // ---------- reportes ----------
+    // Un reporte por persona y por elemento: ID = <tipo>_<objetivoId>_<uid de quien reporta>.
+    // Se guarda junto con la suma en la revisión del elemento. No se editan ni se borran.
+    match /reportes/{reporteId} {
+      // Cada cuenta puede consultar si ya reportó algo (el ID termina con su uid).
+      allow get: if autenticado() && reporteId.matches('.*_' + request.auth.uid);
+      allow read: if esModerador();
+      allow create: if puedeReportar()
+        && request.resource.data.keys().hasOnly(['tipo', 'objetivoId', 'comercioId', 'autorId', 'motivo', 'detalle', 'fecha'])
+        && request.resource.data.keys().hasAll(['tipo', 'objetivoId', 'comercioId', 'autorId', 'motivo', 'detalle', 'fecha'])
+        && reporteId == request.resource.data.tipo + '_' + request.resource.data.objetivoId + '_' + request.auth.uid
+        && request.resource.data.autorId == request.auth.uid
+        && request.resource.data.tipo in ['comentario', 'producto', 'precio', 'cuenta']
+        && request.resource.data.motivo in ['ofensivo', 'spam', 'precio-falso', 'no-apto', 'no-coincide', 'otro']
+        && texto(request.resource.data.comercioId, 0, 128)
+        && texto(request.resource.data.detalle, 0, 200)
+        && request.resource.data.fecha == request.time
+        && existsAfter(/databases/$(database)/documents/revisiones/$(request.resource.data.tipo + '_' + request.resource.data.objetivoId));
+      allow update, delete: if false;
+    }
+
+    // ---------- revisiones ----------
+    // Estado de moderación de cada elemento (ID = <tipo>_<objetivoId>). Lectura pública: las páginas
+    // ocultan lo que el equipo ocultó y muestran "En revisión" en lo reportado.
+    match /revisiones/{revisionId} {
+      allow read: if true;
+
+      // Primer reporte: la revisión nace con 1 reporte, visible y abierta. Nadie reporta lo propio.
+      allow create: if puedeReportar()
+        && revisionId == request.resource.data.tipo + '_' + request.resource.data.objetivoId
+        && revisionValida(request.resource.data)
+        && reporteNuevo(revisionId)
+        && request.resource.data.duenoId != request.auth.uid
+        && duenoReal(request.resource.data)
+        && request.resource.data.cantidadReportes == 1
+        && request.resource.data.motivos.keys().hasOnly([motivoDelReporte(revisionId)])
+        && request.resource.data.motivos[motivoDelReporte(revisionId)] == 1
+        && request.resource.data.ofensivo == false
+        && request.resource.data.oculto == false
+        && request.resource.data.enRevision == false
+        && request.resource.data.estado == 'abierta'
+        && request.resource.data.motivoAutomatico == ''
+        && request.resource.data.resolucion == '';
+
+      // Otro reporte: suma uno en total y uno en su motivo. Con 3 o más pasa a "En revisión".
+      allow update: if puedeReportar()
+        && reporteNuevo(revisionId)
+        && resource.data.duenoId != request.auth.uid
+        && revisionValida(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cantidadReportes', 'motivos', 'enRevision', 'estado', 'fechaActualizacion'])
+        && request.resource.data.cantidadReportes == resource.data.cantidadReportes + 1
+        && request.resource.data.motivos.diff(resource.data.motivos).affectedKeys().hasOnly([motivoDelReporte(revisionId)])
+        && request.resource.data.motivos[motivoDelReporte(revisionId)] == resource.data.motivos.get(motivoDelReporte(revisionId), 0) + 1
+        && request.resource.data.enRevision == (resource.data.enRevision || request.resource.data.cantidadReportes >= 3)
+        && ((resource.data.estado == 'pedido-bloqueo' && request.resource.data.estado == 'pedido-bloqueo')
+          || (resource.data.estado != 'pedido-bloqueo' && request.resource.data.estado == 'abierta'));
+
+      // Marcado automático: quien publica un contenido con palabras no permitidas lo manda a revisión
+      // oculto, en la misma escritura que lo guarda.
+      allow create: if autenticado()
+        && revisionId == request.resource.data.tipo + '_' + request.resource.data.objetivoId
+        && revisionValida(request.resource.data)
+        && request.resource.data.duenoId == request.auth.uid
+        && duenoRealDespues(request.resource.data)
+        && request.resource.data.cantidadReportes == 0
+        && request.resource.data.motivos.size() == 0
+        && request.resource.data.ofensivo == true
+        && request.resource.data.oculto == true
+        && request.resource.data.enRevision == true
+        && request.resource.data.estado == 'abierta';
+      allow update: if autenticado()
+        && resource.data.duenoId == request.auth.uid
+        && revisionValida(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['objetivoNombre', 'ofensivo', 'oculto', 'enRevision', 'estado', 'motivoAutomatico', 'fechaActualizacion'])
+        && request.resource.data.ofensivo == true
+        && request.resource.data.oculto == true
+        && request.resource.data.enRevision == true
+        && request.resource.data.estado == 'abierta';
+
+      // El equipo puede crear la revisión de una cuenta al bloquearla, para ocultar su perfil y sus comentarios.
+      allow create: if esModerador()
+        && revisionId == request.resource.data.tipo + '_' + request.resource.data.objetivoId
+        && revisionValida(request.resource.data);
+
+      // El equipo decide: aprobar, advertir, ocultar o pedir el bloqueo de la cuenta.
+      allow update: if esModerador()
+        && revisionValida(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['objetivoNombre', 'cantidadReportes', 'motivos', 'ofensivo',
+                                                                              'oculto', 'enRevision', 'estado', 'motivoAutomatico',
+                                                                              'resolucion', 'fechaActualizacion'])
+        // Solo el administrador cierra un pedido de bloqueo.
+        && (resource.data.estado != 'pedido-bloqueo' || esAdmin());
+      allow delete: if false;
+    }
+
+    // ---------- avisosModeracion ----------
+    // Mensajes para el dueño de un contenido: en revisión, advertencia, oculto o aprobado.
+    match /avisosModeracion/{avisoId} {
+      allow read: if autenticado() && (resource.data.destinatarioId == request.auth.uid || esModerador());
+
+      // El equipo avisa sus decisiones.
+      allow create: if esModerador()
+        && request.resource.data.keys().hasOnly(['destinatarioId', 'revisionId', 'tipo', 'texto', 'fecha', 'leida'])
+        && request.resource.data.tipo in ['advertencia', 'oculto', 'aprobado']
+        && texto(request.resource.data.destinatarioId, 1, 128)
+        && texto(request.resource.data.texto, 5, 500)
+        && request.resource.data.fecha == request.time
+        && request.resource.data.leida == false;
+
+      // Quien hace el tercer reporte avisa al dueño que su contenido pasó a revisión.
+      allow create: if puedeReportar()
+        && request.resource.data.keys().hasOnly(['destinatarioId', 'revisionId', 'tipo', 'texto', 'fecha', 'leida'])
+        && request.resource.data.tipo == 'en-revision'
+        && get(/databases/$(database)/documents/revisiones/$(request.resource.data.revisionId)).data.enRevision == false
+        && getAfter(/databases/$(database)/documents/revisiones/$(request.resource.data.revisionId)).data.enRevision == true
+        && getAfter(/databases/$(database)/documents/revisiones/$(request.resource.data.revisionId)).data.duenoId == request.resource.data.destinatarioId
+        && texto(request.resource.data.texto, 5, 500)
+        && request.resource.data.fecha == request.time
+        && request.resource.data.leida == false;
+
+      // El dueño solo marca sus avisos como leídos.
+      allow update: if autenticado()
+        && resource.data.destinatarioId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leida'])
+        && request.resource.data.leida == true;
+      allow delete: if false;
+    }
+
+    // ---------- listaBloqueo ----------
+    // Correos y teléfonos de cuentas eliminadas por el administrador. Es permanente.
+    // Cada persona solo puede consultar su propio correo, o un teléfono puntual al registrar un comercio.
+    match /listaBloqueo/{clave} {
+      allow get: if esAdmin()
+        || (autenticado() && (clave == 'correo_' + request.auth.token.email.lower() || clave.matches('telefono_[0-9]+')));
+      allow list: if esAdmin();
+      allow create: if esAdmin()
+        && request.resource.data.keys().hasOnly(['tipo', 'valor', 'motivo', 'fecha'])
+        && request.resource.data.tipo in ['correo', 'telefono']
+        && clave == request.resource.data.tipo + '_' + request.resource.data.valor
+        && texto(request.resource.data.valor, 3, 120)
+        && texto(request.resource.data.motivo, 0, 200)
+        && request.resource.data.fecha == request.time;
+      allow update, delete: if false;
+    }
+
+    // ---------- ocultos ----------
+    // Comercios que una cuenta personal ocultó y cuentas personales que bloqueó (ID = uid).
+    // Es privado: solo lo ve y lo cambia su dueño.
+    match /ocultos/{clienteId} {
+      allow read, delete: if esCliente() && request.auth.uid == clienteId;
+      allow create, update: if esCliente()
+        && request.auth.uid == clienteId
+        && request.resource.data.keys().hasOnly(['comercios', 'cuentas'])
+        && request.resource.data.get('comercios', []) is list
+        && request.resource.data.get('comercios', []).size() <= 200
+        && request.resource.data.get('cuentas', []) is list
+        && request.resource.data.get('cuentas', []).size() <= 200;
     }
   }
 }

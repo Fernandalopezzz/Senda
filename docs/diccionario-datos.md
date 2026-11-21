@@ -8,7 +8,8 @@ Una cuenta por comercio, administrador o cuenta personal. El ID del documento es
 
 | Campo | Tipo | Descripción |
 |---|---|---|
-| rol | string | `pendiente`, `comercio`, `rechazado`, `admin` o `cliente`. |
+| rol | string | `pendiente`, `comercio`, `rechazado`, `admin`, `empleado`, `cliente` o `bloqueado`. |
+| historialId | string | ID de la acción de `historialModeracion` que cambió el rol por última vez. Las reglas lo usan para exigir que un empleado deje registrada cada validación o bloqueo. |
 
 El campo `rol` también registra la validación del comercio:
 
@@ -17,6 +18,10 @@ El campo `rol` también registra la validación del comercio:
 - `rechazado`: el administrador lo bloqueó. No puede entrar al panel y sus precios no se muestran.
 - `cliente`: cuenta personal. Se crea sin validación y sirve para favoritos, reacciones, comentarios y avisos de precio.
 - `admin`: cuenta de administración. Se asigna a mano desde la consola de Firebase, porque las reglas no permiten asignarla desde la aplicación.
+- `empleado`: cuenta del equipo creada por el administrador. Sus permisos están en `empleados`.
+- `bloqueado`: cuenta personal bloqueada por el administrador. No puede ingresar.
+
+Si el correo o el teléfono de una cuenta nueva están en `listaBloqueo`, la cuenta nace `rechazado` (comercio) o `bloqueado` (cuenta personal).
 
 ## comercios
 
@@ -31,6 +36,7 @@ El ID del documento es el `uid` de la cuenta del comercio. Así se relaciona el 
 | direccion | string | Dirección del local. |
 | telefono | string | Teléfono o WhatsApp de contacto. |
 | horario | string | Días y horario de atención. |
+| localidad | string | Localidad de Santa Cruz elegida de una lista fija. Si falta, se toma Río Gallegos. |
 
 ## comerciosPrivados
 
@@ -160,3 +166,104 @@ Algunos datos no se guardan en Firestore, porque son del dispositivo y no hace f
 | `senda:favoritos` | Copia local de los favoritos, para que el corazón responda al instante. |
 | `senda:tema` | `oscuro` o `claro`, según el modo elegido en Configuración. |
 | `senda:historial:<uid>` | Últimas 10 búsquedas y últimos 10 productos vistos, para "Para vos". Los visitantes usan `senda:historial:visitante`. |
+
+## clientesPrivados (campo nuevo)
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| localidad | string | Localidad de la cuenta personal. Ordena "Comercios de tu zona" en el inicio. |
+
+## empleados
+
+Datos de cada empleado. El ID es el `uid`. Lo leen el administrador y el propio empleado. Solo el administrador lo crea y lo modifica. No se borra, se deshabilita.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| nombre | string | Nombre y apellido. Aparece en el historial. |
+| correo | string | Correo de la cuenta. |
+| permisos | map | `verPendientes`, `validar`, `bloquear` y `moderar`, cada uno `true` o `false`. |
+| activo | boolean | `false` si el administrador lo deshabilitó. |
+| fechaAlta | timestamp | Fecha de creación de la cuenta. |
+
+## historialModeracion
+
+Una acción del equipo por documento. Solo la lee el administrador y no se edita ni se borra.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| actorId | string | `uid` de quien hizo la acción. Las reglas exigen que sea la cuenta que escribe. |
+| actorNombre | string | "Administración" o el nombre del empleado. |
+| actorCorreo | string | Correo real de la sesión. |
+| accion | string | Por ejemplo "Comercio aceptado", "Advertencia enviada" o "Alta de empleado". |
+| objetivoTipo | string | `comercio`, `empleado`, `comentario`, `producto`, `precio` o `cuenta`. |
+| objetivoId | string | ID de lo que se modificó. |
+| objetivoNombre | string | Nombre para mostrar en el historial. |
+| motivo | string | Motivo escrito por quien hizo la acción. |
+| origen | string | Desde dónde se hizo: panel de validación, perfil del comercio, lista de revisión o sección Empleados. |
+| fecha | timestamp | Hora del servidor. |
+
+## reportes
+
+Un reporte por persona y por elemento. El ID es `<tipo>_<objetivoId>_<uid de quien reporta>`, así nadie reporta dos veces lo mismo. Lo lee el equipo. Cada cuenta solo puede consultar si ya reportó algo.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| tipo | string | `comentario`, `producto`, `precio` o `cuenta`. |
+| objetivoId | string | ID del elemento reportado. |
+| comercioId | string | Comercio relacionado, o vacío. |
+| autorId | string | `uid` de quien reporta. |
+| motivo | string | `ofensivo`, `spam`, `precio-falso`, `no-apto`, `no-coincide` u `otro`. |
+| detalle | string | Texto opcional, hasta 200 caracteres. |
+| fecha | timestamp | Hora del servidor. |
+
+## revisiones
+
+Estado de moderación de cada elemento reportado o marcado. El ID es `<tipo>_<objetivoId>`. La lectura es pública, porque las páginas ocultan lo que el equipo ocultó y muestran "En revisión".
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| tipo, objetivoId, objetivoNombre | string | Qué elemento es. |
+| duenoId | string | `uid` del dueño del contenido. Las reglas comprueban que sea el dueño real. |
+| comercioId | string | Comercio relacionado, o vacío. |
+| cantidadReportes | number | Reportes de personas distintas desde la última decisión. |
+| motivos | map | Cantidad de reportes por motivo. |
+| ofensivo | boolean | `true` si lo marcó el filtro de palabras. Va primero en la lista. |
+| oculto | boolean | `true` si no se muestra al público. |
+| enRevision | boolean | `true` con 3 reportes o más, o si lo marcó el filtro. |
+| estado | string | `abierta`, `resuelta` o `pedido-bloqueo`. |
+| motivoAutomatico | string | Palabras que encontró el filtro. |
+| resolucion | string | Última decisión del equipo. |
+| fechaActualizacion | timestamp | Hora del servidor. |
+
+## avisosModeracion
+
+Mensajes para el dueño de un contenido. Se muestran la próxima vez que abre SENDA.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| destinatarioId | string | `uid` del dueño. |
+| revisionId | string | Revisión relacionada. |
+| tipo | string | `en-revision`, `advertencia`, `oculto` o `aprobado`. |
+| texto | string | Mensaje. |
+| fecha | timestamp | Hora del servidor. |
+| leida | boolean | `true` cuando el dueño lo cerró. |
+
+## listaBloqueo
+
+Correos y teléfonos de cuentas de comercio eliminadas. Es permanente. El ID es `correo_<correo>` o `telefono_<solo números>`.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| tipo | string | `correo` o `telefono`. |
+| valor | string | Correo en minúsculas o teléfono con solo números. |
+| motivo | string | Motivo de la eliminación. |
+| fecha | timestamp | Hora del servidor. |
+
+## ocultos
+
+Lo que cada cuenta personal decidió no ver. El ID es el `uid`. Es privado.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| comercios | array | Comercios ocultos de las comparaciones. |
+| cuentas | array | Cuentas personales bloqueadas. Sus comentarios no se muestran. |

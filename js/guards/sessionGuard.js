@@ -8,15 +8,18 @@ import { obtenerComercio } from "../services/comerciosService.js";
 import { obtenerMiCuenta } from "../services/clientesService.js";
 import { vincularFavoritosConCuenta } from "../services/productosService.js";
 import { revisarCambiosDePrecio } from "../services/avisosPrecioService.js";
-import { ROLES, ROLES_COMERCIO_ACTIVO, RUTAS } from "../core/constants.js";
+import { ROLES, ROLES_COMERCIO_ACTIVO, ROLES_EQUIPO, RUTAS } from "../core/constants.js";
+import { obtenerEmpleado } from "../services/empleadosService.js";
 import { ErrorSenda, manejarError } from "../core/errores.js";
 import { iniciales, mostrarAviso } from "../ui/feedback.js";
 import { revisarAvisosDelComercio } from "../ui/components/avisosComercio.js";
+import { revisarAvisosDeModeracion } from "../ui/components/reportar.js";
 
-// El administrador y el comercio usan la misma pantalla de gestión; el contenido cambia según el rol.
+// El equipo (administrador y empleados) y el comercio usan la misma pantalla de gestión;
+// el contenido cambia según el rol.
 // La cuenta personal tiene su propio perfil.
 export function rutaSegunRol(rol) {
-  if (rol === ROLES.ADMIN || ROLES_COMERCIO_ACTIVO.includes(rol)) return RUTAS.GESTION_COMERCIO;
+  if (ROLES_EQUIPO.includes(rol) || ROLES_COMERCIO_ACTIVO.includes(rol)) return RUTAS.GESTION_COMERCIO;
   if (rol === ROLES.CLIENTE) return RUTAS.PERFIL_USUARIO;
   return null;
 }
@@ -40,11 +43,16 @@ export async function obtenerCuentaActual() {
 export async function resolverAcceso(usuario) {
   const perfil = await obtenerUsuario(usuario.uid);
   const destino = rutaSegunRol(perfil?.rol);
+  if (perfil?.rol === ROLES.EMPLEADO) {
+    const empleado = await obtenerEmpleado(usuario.uid);
+    return { perfil, destino, deshabilitado: !empleado?.activo };
+  }
   if (destino) return { perfil, destino };
 
   await cerrarSesion();
   if (perfil?.rol === ROLES.PENDIENTE) throw new ErrorSenda("senda/pendiente");
   if (perfil?.rol === ROLES.RECHAZADO) throw new ErrorSenda("senda/rechazado");
+  if (perfil?.rol === ROLES.BLOQUEADO) throw new ErrorSenda("senda/bloqueado");
   throw new ErrorSenda("senda/sin-cuenta");
 }
 
@@ -113,12 +121,20 @@ export function prepararBarraPublica(contenedor, { activo = null, revisarPrecios
         manejarError(error, "Lectura de la cuenta en la barra");
       }
     }
+    // Un empleado deshabilitado no puede navegar SENDA con su cuenta: va al aviso de su panel,
+    // donde lo único que puede hacer es cerrar sesión.
+    if (cuenta?.deshabilitado) {
+      window.location.replace(RUTAS.GESTION_COMERCIO);
+      return;
+    }
     visitante.hidden = Boolean(cuenta);
     sesion.hidden = !cuenta;
     if (cuenta) mostrarCuenta(sesion, cuenta);
     guardarCuentaDeLaBarra(cuenta);
     // Si el administrador eliminó algún producto del comercio, se le avisa al abrir SENDA.
     if (cuenta?.esComercio) revisarAvisosDelComercio(usuario.uid);
+    // Avisos del equipo de SENDA sobre su contenido: en revisión, advertencias u ocultos.
+    if (cuenta?.esComercio || cuenta?.esCliente) revisarAvisosDeModeracion(usuario.uid);
     // Con cuenta personal, los favoritos se toman de la cuenta.
     if (cuenta?.esCliente) {
       vincularFavoritosConCuenta(usuario.uid)
@@ -191,6 +207,10 @@ async function datosDeLaCuenta(uid) {
   const destino = rutaSegunRol(perfil?.rol);
   if (!destino) return null;
   if (perfil.rol === ROLES.ADMIN) return { nombre: "Administración", foto: null, destino };
+  if (perfil.rol === ROLES.EMPLEADO) {
+    const empleado = await obtenerEmpleado(uid);
+    return { nombre: empleado?.nombre || "Equipo SENDA", foto: null, destino, deshabilitado: !empleado?.activo };
+  }
   if (perfil.rol === ROLES.CLIENTE) {
     const cliente = await obtenerMiCuenta(uid);
     return { nombre: cliente?.usuario ? `@${cliente.usuario}` : "Mi cuenta", foto: cliente?.foto || null, destino, esCliente: true };

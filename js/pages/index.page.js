@@ -5,15 +5,19 @@
 //   4. Para vos: la mejor oferta de lo que la persona buscó o miró hace poco (historialService).
 //   5. Compará precios: un producto de ejemplo con sus precios en varios comercios.
 //   6. Ofertas y descuentos.
+//   7. Comercios de tu zona: los comercios de la localidad de la cuenta (o la elegida en el selector)
+//      con sus productos. Los visitantes eligen la localidad y queda guardada en el navegador.
 // La búsqueda lleva a resultados.html.
 
-import { LIMITES, RUTAS } from "../core/constants.js";
+import { LIMITES, RUTAS, ROLES, LOCALIDADES, LOCALIDAD_PREDETERMINADA, ALMACENAMIENTO } from "../core/constants.js";
 import { validarBusqueda, normalizarTexto } from "../core/validators.js";
 import { manejarError } from "../core/errores.js";
 import { verificarConfiguracion } from "../services/authService.js";
 import { cargarCatalogo } from "../services/preciosService.js";
 import { leerHistorial, borrarHistorial } from "../services/historialService.js";
-import { prepararBarraPublica } from "../guards/sessionGuard.js";
+import { prepararBarraPublica, obtenerCuentaActual } from "../guards/sessionGuard.js";
+import { obtenerMiCuenta } from "../services/clientesService.js";
+import { obtenerComercio } from "../services/comerciosService.js";
 import {
   escaparHTML,
   precioTexto,
@@ -25,9 +29,12 @@ import {
 } from "../ui/feedback.js";
 import { crearTarjetaResumen, crearTarjetaProducto, rutaDetalleProducto } from "../ui/components/tarjetaProducto.js";
 import { crearComparadorPrecios } from "../ui/components/comparadorPrecios.js";
+import { rutaPerfilComercio, htmlAvatarComercio, htmlActualizadoHoy, htmlNoValidado } from "../ui/components/tarjetaComercio.js";
 
-const CANTIDAD_RECOMENDADOS = 5;
-const CANTIDAD_PARA_VOS = 5;
+// Seis por sección: es la cantidad de tarjetas que entra en una fila (ver .grilla-ofertas).
+const CANTIDAD_RECOMENDADOS = 6;
+const CANTIDAD_PARA_VOS = 6;
+const PRODUCTOS_POR_COMERCIO = 6;
 const $ = (id) => document.getElementById(id);
 
 const elementos = {
@@ -47,11 +54,15 @@ const elementos = {
   menuParaVos: $("menu-para-vos"),
   botonBorrarHistorial: $("boton-borrar-historial"),
   destacados: $("contenido-destacados"),
-  ofertas: $("lista-ofertas")
+  ofertas: $("lista-ofertas"),
+  selectorLocalidad: $("selector-localidad"),
+  bajadaZona: $("bajada-comercios-zona"),
+  comerciosZona: $("lista-comercios-zona")
 };
 
 const estado = {
-  productos: []
+  productos: [],
+  localidad: LOCALIDAD_PREDETERMINADA
 };
 
 // ---------- Novedades de los favoritos ----------
@@ -209,11 +220,119 @@ function renderizarOfertas(productos) {
   elementos.ofertas.replaceChildren(...ofertas.map(crearTarjetaResumen));
 }
 
+// ---------- Comercios de tu zona ----------
+
+// Localidad elegida en el selector (se guarda en el navegador). Tiene prioridad porque es una
+// elección explícita. Si no hay, se usa la de la cuenta y, si tampoco, Río Gallegos.
+function leerLocalidadGuardada() {
+  try {
+    const guardada = localStorage.getItem(ALMACENAMIENTO.LOCALIDAD);
+    return LOCALIDADES.includes(guardada) ? guardada : null;
+  } catch {
+    return null;
+  }
+}
+
+async function localidadDeLaCuenta() {
+  const cuenta = await obtenerCuentaActual();
+  if (!cuenta) return null;
+  if (cuenta.rol === ROLES.CLIENTE) return (await obtenerMiCuenta(cuenta.uid))?.localidad || null;
+  if (cuenta.rol === ROLES.COMERCIO || cuenta.rol === ROLES.PENDIENTE) return (await obtenerComercio(cuenta.uid))?.localidad || null;
+  return null;
+}
+
+function prepararSelectorLocalidad() {
+  elementos.selectorLocalidad.innerHTML = LOCALIDADES.map(
+    (localidad) => `<option value="${escaparHTML(localidad)}">${escaparHTML(localidad)}</option>`
+  ).join("");
+  elementos.selectorLocalidad.value = estado.localidad;
+  elementos.selectorLocalidad.addEventListener("change", () => {
+    estado.localidad = elementos.selectorLocalidad.value;
+    try {
+      localStorage.setItem(ALMACENAMIENTO.LOCALIDAD, estado.localidad);
+    } catch {
+      // Sin localStorage la elección dura solo mientras la página está abierta.
+    }
+    renderizarComerciosDeLaZona();
+  });
+}
+
+// Agrupa el catálogo por comercio: Map<comercioId, { comercio, ofertas: [{ producto, precio }] }>.
+function productosPorComercio() {
+  const grupos = new Map();
+  for (const resumen of estado.productos) {
+    for (const { precio, comercio } of resumen.ofertas) {
+      if (!grupos.has(comercio.id)) grupos.set(comercio.id, { comercio, ofertas: [] });
+      grupos.get(comercio.id).ofertas.push({ producto: resumen.producto, precio });
+    }
+  }
+  return grupos;
+}
+
+function crearBloqueComercio({ comercio, ofertas }) {
+  const bloque = document.createElement("article");
+  bloque.className = "zona__comercio tarjeta";
+  const cantidad = ofertas.length === 1 ? "1 producto publicado" : `${ofertas.length} productos publicados`;
+  bloque.innerHTML = `
+    <header class="zona__cabecera">
+      <a class="zona__logo" href="${rutaPerfilComercio(comercio.id)}" aria-hidden="true" tabindex="-1">${htmlAvatarComercio(comercio, "avatar--grande")}</a>
+      <div class="zona__datos">
+        <h3 class="zona__nombre"><a href="${rutaPerfilComercio(comercio.id)}">${escaparHTML(comercio.nombre)}</a> ${htmlActualizadoHoy(comercio)}</h3>
+        ${htmlNoValidado(comercio)}
+        <p class="zona__detalle">${escaparHTML(comercio.direccion || "Dirección sin cargar")} · ${cantidad}</p>
+      </div>
+      <a class="btn btn--linea btn--chico" href="${rutaPerfilComercio(comercio.id)}">Ver comercio</a>
+    </header>`;
+  const grilla = document.createElement("div");
+  grilla.className = "grilla-ofertas";
+  const elegidas = [...ofertas]
+    .sort((a, b) => Number(b.precio.disponible) - Number(a.precio.disponible) || a.precio.precioFinal - b.precio.precioFinal)
+    .slice(0, PRODUCTOS_POR_COMERCIO);
+  grilla.append(
+    ...elegidas.map(({ producto, precio }) =>
+      crearTarjetaProducto({
+        producto,
+        precio: precio.precioFinal,
+        descuento: Number(precio.porcentajeDescuento) || 0,
+        detalle: precio.disponible ? "En stock" : "Sin stock",
+        sinStock: !precio.disponible
+      })
+    )
+  );
+  bloque.append(grilla);
+  return bloque;
+}
+
+function renderizarComerciosDeLaZona() {
+  const localidad = estado.localidad;
+  elementos.bajadaZona.textContent = `${localidad}. Los comercios de tu localidad y lo que venden.`;
+  const comercios = [...productosPorComercio().values()]
+    .filter(({ comercio }) => (comercio.localidad || LOCALIDAD_PREDETERMINADA) === localidad)
+    // Primero los que actualizaron sus precios hoy y después los que publican más productos.
+    .sort((a, b) => Number(b.comercio.actualizadoHoy) - Number(a.comercio.actualizadoHoy) || b.ofertas.length - a.ofertas.length);
+  if (comercios.length === 0) {
+    mostrarVacio(
+      elementos.comerciosZona,
+      `Todavía no hay comercios de ${localidad} en SENDA`,
+      "Elegí otra localidad o volvé más tarde."
+    );
+    return;
+  }
+  elementos.comerciosZona.replaceChildren(...comercios.map(crearBloqueComercio));
+}
+
+async function cargarComerciosDeLaZona() {
+  estado.localidad = leerLocalidadGuardada() ?? (await localidadDeLaCuenta().catch(() => null)) ?? LOCALIDAD_PREDETERMINADA;
+  prepararSelectorLocalidad();
+  renderizarComerciosDeLaZona();
+}
+
 async function cargar() {
   mostrarCargando(elementos.recomendados, "Buscando los mejores precios...");
   mostrarCargando(elementos.paraVos, "Armando tus recomendaciones...");
   mostrarCargando(elementos.destacados, "Comparando precios...");
   mostrarCargando(elementos.ofertas, "Cargando ofertas...");
+  mostrarCargando(elementos.comerciosZona, "Buscando comercios de tu zona...");
   try {
     verificarConfiguracion();
     const { productos } = await cargarCatalogo();
@@ -222,10 +341,11 @@ async function cargar() {
     await renderizarParaVos();
     renderizarDestacado(productos);
     renderizarOfertas(productos);
+    await cargarComerciosDeLaZona();
   } catch (error) {
     const mensaje = manejarError(error, "Carga del inicio");
     mostrarError(elementos.recomendados, mensaje, cargar);
-    [elementos.paraVos, elementos.destacados, elementos.ofertas].forEach((contenedor) => mostrarError(contenedor, mensaje));
+    [elementos.paraVos, elementos.destacados, elementos.ofertas, elementos.comerciosZona].forEach((contenedor) => mostrarError(contenedor, mensaje));
   }
 }
 
